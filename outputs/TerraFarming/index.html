@@ -92,6 +92,11 @@
             </div>
             <div id="missionList" class="mission-list"></div>
             <div class="section-head unlock-head">
+              <h2>宇宙農協だより</h2>
+              <span id="coopSummary">お願い</span>
+            </div>
+            <div id="coopRequestList" class="request-list"></div>
+            <div class="section-head unlock-head">
               <h2>設備アップグレード</h2>
               <span id="bonusSummary">ボーナス</span>
             </div>
@@ -116,6 +121,17 @@
             <div id="labResult" class="lab-result"></div>
           </section>
         </div>
+
+        <section id="deliveryModal" class="delivery-modal" aria-label="届ける作物を選ぶ" aria-hidden="true">
+          <div class="delivery-sheet">
+            <div class="section-head">
+              <h2 id="deliveryTitle">届ける作物</h2>
+              <button id="deliveryCloseBtn" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <p id="deliveryNote" class="delivery-note"></p>
+            <div id="deliveryCropList" class="delivery-crop-list"></div>
+          </div>
+        </section>
 
         <footer class="toast" aria-live="polite">
           <span id="logText">小惑星の朝です。まずは種を植えましょう。</span>

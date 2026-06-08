@@ -128,11 +128,188 @@ const upgrades = [
   }
 ];
 
+const requestClients = {
+  mira: { name: "ミラさん", role: "月面食堂の店主" },
+  rou: { name: "ロウさん", role: "宇宙市の仕入れ係" },
+  pico: { name: "ピコ", role: "小さな配達ロボ" },
+  luka: { name: "ルカ先生", role: "宇宙学校の先生" },
+  nono: { name: "ノノさん", role: "酸素庭園の管理人" }
+};
+
+const coopRequests = [
+  {
+    id: "mira_1",
+    client: "mira",
+    rank: 1,
+    title: "今夜の甘いシチュー",
+    comment: "今夜のシチューに、ちょっと甘い野菜を入れたくてねぇ。余ってたら分けてもらえるかい？",
+    need: "甘み 7以上の作物を1個",
+    thanks: "ミラさんへ野菜を届けました。食堂の鍋が少しにぎやかになりました。",
+    reward: { coins: 24, terraPoints: 3 },
+    matches: (crop) => crop.stats.sweetness >= 7
+  },
+  {
+    id: "mira_2",
+    client: "mira",
+    rank: 2,
+    title: "食堂の大鍋ランチ",
+    comment: "今日はお客さんが多くてねぇ。食べごたえのある野菜があると助かるんだよ。",
+    need: "大きさ 9以上の作物を1個",
+    thanks: "ミラさんへ大きな野菜を届けました。ランチの皿がほかほか並びました。",
+    reward: { coins: 42, food: 8 },
+    matches: (crop) => crop.stats.size >= 9
+  },
+  {
+    id: "mira_3",
+    client: "mira",
+    rank: 3,
+    title: "月祭りの特製ポトフ",
+    comment: "月祭りの夜に出す特別なポトフなんだ。甘くて大きな野菜をお願いできるかい？",
+    need: "甘み 10以上、かつ大きさ 10以上の作物を1個",
+    thanks: "ミラさんへ特製ポトフの野菜を届けました。月祭りの厨房に湯気が上がっています。",
+    reward: { coins: 80, terraPoints: 10 },
+    matches: (crop) => crop.stats.sweetness >= 10 && crop.stats.size >= 10
+  },
+  {
+    id: "rou_1",
+    client: "rou",
+    rank: 1,
+    title: "市場の入口飾り",
+    comment: "へい、いい香りの野菜を探してんだ。入口に置きゃあ、客足も変わるってもんよ！",
+    need: "香り 7以上の作物を1個",
+    thanks: "ロウさんへ香りのよい野菜を届けました。市場の入口がぱっと明るくなりました。",
+    reward: { coins: 28, terraPoints: 2 },
+    matches: (crop) => crop.stats.aroma >= 7
+  },
+  {
+    id: "rou_2",
+    client: "rou",
+    rank: 2,
+    title: "朝市の目玉商品",
+    comment: "ちょいと珍しいやつを出したくてな。見た目で客を振り向かせてぇんだ！",
+    need: "希少度 4以上の作物を1個",
+    thanks: "ロウさんへ珍しい野菜を届けました。朝市の棚に人だかりができています。",
+    reward: { coins: 55, terraPoints: 5 },
+    matches: (crop) => crop.stats.rarity >= 4
+  },
+  {
+    id: "rou_3",
+    client: "rou",
+    rank: 3,
+    title: "宇宙市の看板野菜",
+    comment: "こいつぁ市場の看板にする一品だ。香りも珍しさも、ビシッと決まったやつを頼むぜ！",
+    need: "香り 10以上、かつ希少度 5以上の作物を1個",
+    thanks: "ロウさんへ看板野菜を届けました。宇宙市の声がいつもより威勢よく響いています。",
+    reward: { coins: 95, terraPoints: 12 },
+    matches: (crop) => crop.stats.aroma >= 10 && crop.stats.rarity >= 5
+  },
+  {
+    id: "pico_1",
+    client: "pico",
+    rank: 1,
+    title: "キラキラ便",
+    comment: "ピコ、キラキラヤサイ、ハイタツシタイ。ミンナ、ニコニコ、スル？",
+    need: "希少度 3以上の作物を1個",
+    thanks: "ピコへ野菜を預けました。ピコ、キラキラ、ブジ、ハイタツ。",
+    reward: { coins: 22, terraPoints: 4 },
+    matches: (crop) => crop.stats.rarity >= 3
+  },
+  {
+    id: "pico_2",
+    client: "pico",
+    rank: 2,
+    title: "フシギ便",
+    comment: "ピコ、フツウジャナイ、ヤサイ、スキ。セダイ、ススンダヤツ、ハコビタイ。",
+    need: "第2世代以上の作物を1個",
+    thanks: "ピコへ次世代の野菜を預けました。ピコ、フシギ、タイセツニ、ハコンダ。",
+    reward: { coins: 45, terraPoints: 7 },
+    matches: (crop) => crop.generation >= 2
+  },
+  {
+    id: "pico_3",
+    client: "pico",
+    rank: 3,
+    title: "ミュータント特急",
+    comment: "ピコ、ミュータント、ハコブ。ピコ、チョット、ワクワク、シテル。",
+    need: "ミュータント名の作物、または第3世代以上かつ希少度 5以上の作物を1個",
+    thanks: "ピコへ特別な野菜を預けました。ピコ、ワクワク、トマラナイ。",
+    reward: { coins: 90, terraPoints: 14 },
+    matches: (crop) => crop.name.includes("ミュータント") || (crop.generation >= 3 && crop.stats.rarity >= 5)
+  },
+  {
+    id: "luka_1",
+    client: "luka",
+    rank: 1,
+    title: "香りの授業",
+    comment: "子どもたちに、野菜の香りの違いを学んでもらいたいのです。特徴のあるものをお願いできますか？",
+    need: "香り 7以上の作物を1個",
+    thanks: "ルカ先生へ野菜を届けました。教室にやさしい香りが広がりました。",
+    reward: { terraPoints: 5, coins: 18 },
+    matches: (crop) => crop.stats.aroma >= 7
+  },
+  {
+    id: "luka_2",
+    client: "luka",
+    rank: 2,
+    title: "成長観察ノート",
+    comment: "世代を重ねた作物を観察すると、学びが深まります。第2世代以上の野菜をお願いできますか？",
+    need: "第2世代以上の作物を1個",
+    thanks: "ルカ先生へ観察用の野菜を届けました。子どもたちのノートが一枚増えました。",
+    reward: { terraPoints: 9, coins: 36 },
+    matches: (crop) => crop.generation >= 2
+  },
+  {
+    id: "luka_3",
+    client: "luka",
+    rank: 3,
+    title: "宇宙農業の教材",
+    comment: "生命力の強い作物は、子どもたちにとって良い教材になります。大切に扱わせていただきますね。",
+    need: "第3世代以上、かつ生命力 11以上の作物を1個",
+    thanks: "ルカ先生へ教材用の野菜を届けました。教室の窓辺に新しい観察棚ができました。",
+    reward: { terraPoints: 16, coins: 70 },
+    matches: (crop) => crop.generation >= 3 && crop.stats.vitality >= 11
+  },
+  {
+    id: "nono_1",
+    client: "nono",
+    rank: 1,
+    title: "庭園の深呼吸",
+    comment: "庭園の芽たちが、今日は少し息苦しそうなんです。空気をふやせる野菜があれば、分けていただけませんか。",
+    need: "酸素を5以上増やす作物を1個",
+    thanks: "ノノさんへ野菜を届けました。酸素庭園の芽たちが少し背すじを伸ばしました。",
+    reward: { terraPoints: 5, coins: 18 },
+    matches: (crop) => crop.environmentYield.oxygen >= 5
+  },
+  {
+    id: "nono_2",
+    client: "nono",
+    rank: 2,
+    title: "しおれた温室",
+    comment: "温室の葉先が、少し乾いているみたいで……水分をふくんだ野菜があると助かります。",
+    need: "水分を6以上増やす作物を1個",
+    thanks: "ノノさんへ水分をふくんだ野菜を届けました。温室の葉先にみずみずしさが戻りました。",
+    reward: { terraPoints: 8, coins: 38 },
+    matches: (crop) => crop.environmentYield.water >= 6
+  },
+  {
+    id: "nono_3",
+    client: "nono",
+    rank: 3,
+    title: "緑の星への小さな手当て",
+    comment: "この庭園が、いつか小惑星ぜんぶの呼吸につながる気がするんです。力を貸していただけますか。",
+    need: "酸素 7以上、水分 5以上、生命力 10以上の作物を1個",
+    thanks: "ノノさんへ特別な野菜を届けました。庭園の空気が静かに澄んでいきます。",
+    reward: { terraPoints: 18, coins: 75 },
+    matches: (crop) => crop.environmentYield.oxygen >= 7 && crop.environmentYield.water >= 5 && crop.stats.vitality >= 10
+  }
+];
+
 const state = loadState();
 let selectedParentA = null;
 let selectedParentB = null;
 let audioContext = null;
 let pendingSellId = null;
+let activeDeliveryId = null;
 let bgmTimer = null;
 let bgmMode = null;
 
@@ -155,6 +332,8 @@ const els = {
   harvestAllBtn: document.querySelector("#harvestAllBtn"),
   missionProgress: document.querySelector("#missionProgress"),
   missionList: document.querySelector("#missionList"),
+  coopSummary: document.querySelector("#coopSummary"),
+  coopRequestList: document.querySelector("#coopRequestList"),
   bonusSummary: document.querySelector("#bonusSummary"),
   upgradeList: document.querySelector("#upgradeList"),
   unlockSummary: document.querySelector("#unlockSummary"),
@@ -168,6 +347,11 @@ const els = {
   breedBtn: document.querySelector("#breedBtn"),
   labResult: document.querySelector("#labResult"),
   logText: document.querySelector("#logText"),
+  deliveryModal: document.querySelector("#deliveryModal"),
+  deliveryTitle: document.querySelector("#deliveryTitle"),
+  deliveryNote: document.querySelector("#deliveryNote"),
+  deliveryCropList: document.querySelector("#deliveryCropList"),
+  deliveryCloseBtn: document.querySelector("#deliveryCloseBtn"),
   resetBtn: document.querySelector("#resetBtn")
 };
 let toastTimer = null;
@@ -205,6 +389,7 @@ function loadState() {
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0 },
     stats: { totalHarvested: 0, totalBred: 0, totalSold: 0 },
     reportedMissions: [],
+    completedRequests: [],
     bonuses: { growth: 0, mutation: 0, sale: 0 },
     upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0 },
     lastSeen: Date.now()
@@ -224,6 +409,7 @@ function normalizeState(raw) {
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0, ...raw.environment },
     stats: { totalHarvested: 0, totalBred: 0, totalSold: 0, ...raw.stats },
     reportedMissions: raw.reportedMissions ?? raw.completedMissions ?? [],
+    completedRequests: raw.completedRequests ?? [],
     bonuses: { growth: 0, mutation: 0, sale: 0, ...raw.bonuses },
     upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0, ...raw.upgradeLevels },
     lastSeen: raw.lastSeen ?? Date.now()
@@ -523,6 +709,62 @@ function buyUpgrade(upgradeId) {
   saveAndRender();
 }
 
+function requestRewardText(reward) {
+  return [
+    reward.coins ? `コイン ${reward.coins}` : "",
+    reward.terraPoints ? `テラP ${reward.terraPoints}` : "",
+    reward.food ? `食料 ${reward.food}` : ""
+  ].filter(Boolean).join(" / ");
+}
+
+function applyRequestReward(reward) {
+  state.resources.coins += reward.coins ?? 0;
+  state.resources.terraPoints += reward.terraPoints ?? 0;
+  state.resources.food += reward.food ?? 0;
+}
+
+function isRequestCompleted(requestId) {
+  return state.completedRequests.includes(requestId);
+}
+
+function isRequestVisible(request) {
+  if (request.rank === 1) return true;
+  return isRequestCompleted(`${request.client}_${request.rank - 1}`);
+}
+
+function eligibleCropsForRequest(request) {
+  return state.storage.filter((crop) => request.matches(crop));
+}
+
+function openDelivery(requestId) {
+  const request = coopRequests.find((item) => item.id === requestId);
+  if (!request || isRequestCompleted(request.id)) return;
+  activeDeliveryId = request.id;
+  renderDeliveryModal();
+}
+
+function closeDelivery() {
+  activeDeliveryId = null;
+  els.deliveryModal.classList.remove("show");
+  els.deliveryModal.setAttribute("aria-hidden", "true");
+}
+
+function deliverRequestCrop(cropId) {
+  const request = coopRequests.find((item) => item.id === activeDeliveryId);
+  const crop = state.storage.find((item) => item.id === cropId);
+  if (!request || !crop || isRequestCompleted(request.id) || !request.matches(crop)) return;
+
+  state.storage = state.storage.filter((item) => item.id !== crop.id);
+  state.completedRequests.push(request.id);
+  applyRequestReward(request.reward);
+  pendingSellId = null;
+  clearInvalidParents();
+  closeDelivery();
+  playRewardSound();
+  setLog(request.thanks);
+  saveAndRender();
+}
+
 function clearInvalidParents() {
   const ids = new Set(state.storage.map((item) => item.id));
   if (!ids.has(selectedParentA)) selectedParentA = null;
@@ -601,8 +843,10 @@ function render() {
   renderSeedPicker();
   renderField();
   renderMissions();
+  renderCoopRequests();
   renderStorage();
   renderLab();
+  renderDeliveryModal();
 }
 
 function renderStats() {
@@ -742,6 +986,79 @@ function renderMissions() {
     item.textContent = text;
     els.unlockList.appendChild(item);
   });
+}
+
+function renderCoopRequests() {
+  const visibleRequests = coopRequests.filter(isRequestVisible);
+  const completedVisible = visibleRequests.filter((request) => isRequestCompleted(request.id)).length;
+  els.coopSummary.textContent = `${completedVisible}/${visibleRequests.length}`;
+  els.coopRequestList.innerHTML = "";
+
+  visibleRequests.forEach((request) => {
+    const client = requestClients[request.client];
+    const completed = isRequestCompleted(request.id);
+    const eligibleCount = eligibleCropsForRequest(request).length;
+    const item = document.createElement("div");
+    item.className = `coop-request ${completed ? "done" : eligibleCount ? "ready" : ""}`;
+    item.innerHTML = `
+      <div class="request-main">
+        <div class="request-kicker">
+          <span>${"★".repeat(request.rank)}</span>
+          <small>${client.name} / ${client.role}</small>
+        </div>
+        <strong>${request.title}</strong>
+        <p>${request.comment}</p>
+        <small>ほしいもの: ${request.need}</small>
+        <small>お礼: ${requestRewardText(request.reward)}</small>
+      </div>
+      <button class="mini-action" ${!completed && eligibleCount ? "" : "disabled"} data-delivery="${request.id}">
+        ${completed ? "届け済み" : eligibleCount ? `届ける ${eligibleCount}` : "待ち"}
+      </button>
+    `;
+    els.coopRequestList.appendChild(item);
+  });
+}
+
+function renderDeliveryModal() {
+  const request = coopRequests.find((item) => item.id === activeDeliveryId);
+  if (!request) {
+    els.deliveryModal.classList.remove("show");
+    els.deliveryModal.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  const client = requestClients[request.client];
+  const eligibleCrops = eligibleCropsForRequest(request);
+  els.deliveryTitle.textContent = `${request.title}へ届ける`;
+  els.deliveryNote.textContent = `${client.name}に届ける作物を選びます。${request.need}`;
+  els.deliveryCropList.innerHTML = "";
+
+  eligibleCrops.forEach((crop) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "delivery-crop";
+    item.dataset.deliverCrop = crop.id;
+    item.innerHTML = `
+      <span class="item-name">第${crop.generation}世代 ${crop.name}</span>
+      <span class="item-stats">
+        ${Object.entries(crop.stats).map(([key, value]) => `<span class="chip">${statLabels[key]} ${value}</span>`).join("")}
+        <span class="chip">酸 ${crop.environmentYield.oxygen}</span>
+        <span class="chip">水 ${crop.environmentYield.water}</span>
+        <span class="chip">窒 ${crop.environmentYield.nitrogen}</span>
+      </span>
+    `;
+    els.deliveryCropList.appendChild(item);
+  });
+
+  if (!eligibleCrops.length) {
+    const empty = document.createElement("div");
+    empty.className = "delivery-empty";
+    empty.textContent = "届けられる作物がありません。";
+    els.deliveryCropList.appendChild(empty);
+  }
+
+  els.deliveryModal.classList.add("show");
+  els.deliveryModal.setAttribute("aria-hidden", "false");
 }
 
 function renderStorage() {
@@ -953,6 +1270,27 @@ els.upgradeList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-upgrade]");
   if (button) {
     buyUpgrade(button.dataset.upgrade);
+  }
+});
+
+els.coopRequestList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-delivery]");
+  if (button) {
+    openDelivery(button.dataset.delivery);
+  }
+});
+
+els.deliveryCropList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-deliver-crop]");
+  if (button) {
+    deliverRequestCrop(button.dataset.deliverCrop);
+  }
+});
+
+els.deliveryCloseBtn.addEventListener("click", closeDelivery);
+els.deliveryModal.addEventListener("click", (event) => {
+  if (event.target === els.deliveryModal) {
+    closeDelivery();
   }
 });
 
