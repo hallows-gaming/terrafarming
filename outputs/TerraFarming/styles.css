@@ -870,6 +870,11 @@ body[data-stage="緑の星"] .planet-core {
   background: #eef8ee;
 }
 
+.planet-route.ready {
+  border-color: rgba(197, 138, 34, 0.36);
+  background: #fff8e8;
+}
+
 .planet-route.locked {
   background: #f2f3ef;
 }

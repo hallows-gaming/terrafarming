@@ -395,7 +395,6 @@ let pendingSellId = null;
 let activeDeliveryId = null;
 let activeParentSlot = null;
 let pendingDiscoveryName = null;
-let pendingPlanetUnlockName = null;
 let bgmTimer = null;
 let bgmMode = null;
 let introIndex = 0;
@@ -708,9 +707,6 @@ function normalizeState(raw) {
   if (!normalized.unlockedPlanets.includes(HOME_PLANET_ID)) {
     normalized.unlockedPlanets.unshift(HOME_PLANET_ID);
   }
-  if (normalized.planets[HOME_PLANET_ID].environment.green >= 100 && !normalized.unlockedPlanets.includes("frontier")) {
-    normalized.unlockedPlanets.push("frontier");
-  }
   if (!normalized.unlockedPlanets.includes(normalized.activePlanetId)) {
     normalized.activePlanetId = HOME_PLANET_ID;
   }
@@ -806,11 +802,23 @@ function updatePlanetUnlocks() {
     }
   });
 
-  if (state.activePlanetId === HOME_PLANET_ID && state.environment.green >= 100 && def.nextPlanet && !state.unlockedPlanets.includes(def.nextPlanet)) {
-    state.unlockedPlanets.push(def.nextPlanet);
-    state.planets[def.nextPlanet] = normalizePlanetState(def.nextPlanet, state.planets[def.nextPlanet]);
-    pendingPlanetUnlockName = planetCatalog[def.nextPlanet].fallbackName;
-  }
+}
+
+function canCompletePlanet(planetId) {
+  const def = planetCatalog[planetId];
+  const planet = state.planets[planetId];
+  return Boolean(def?.nextPlanet && planet?.environment.green >= 100 && !state.unlockedPlanets.includes(def.nextPlanet));
+}
+
+function completePlanet(planetId) {
+  if (!canCompletePlanet(planetId)) return;
+
+  const nextPlanetId = planetCatalog[planetId].nextPlanet;
+  state.unlockedPlanets.push(nextPlanetId);
+  state.planets[nextPlanetId] = normalizePlanetState(nextPlanetId, state.planets[nextPlanetId]);
+  playRewardSound();
+  setLog(`${currentPlanet().name}の開拓を達成しました。${planetCatalog[nextPlanetId].fallbackName}への航路が開きました。`);
+  saveAndRender();
 }
 
 function saveState() {
@@ -911,10 +919,8 @@ function harvestAll() {
     playHarvestSound();
   }
   const discoveryText = pendingDiscoveryName ? ` 図鑑に${pendingDiscoveryName}を登録しました。` : "";
-  const routeText = pendingPlanetUnlockName ? ` ${pendingPlanetUnlockName}への航路が開きました。` : "";
-  setLog(count ? `${count}個の作物を収穫しました。倉庫から売るとコインになります。${discoveryText}${routeText}` : "収穫できる作物はまだありません。");
+  setLog(count ? `${count}個の作物を収穫しました。倉庫から売るとコインになります。${discoveryText}` : "収穫できる作物はまだありません。");
   pendingDiscoveryName = null;
-  pendingPlanetUnlockName = null;
   clearInvalidParents();
   saveAndRender();
 }
@@ -1266,16 +1272,19 @@ function renderPlanets() {
   Object.values(planetCatalog).forEach((def) => {
     const unlocked = state.unlockedPlanets.includes(def.id);
     const planet = state.planets[def.id] ?? createPlanetState(def.id, def.id === HOME_PLANET_ID ? state.profile.planetName : def.fallbackName);
+    const completable = canCompletePlanet(def.id);
     const item = document.createElement("div");
-    item.className = `planet-route ${state.activePlanetId === def.id ? "active" : ""}${unlocked ? "" : " locked"}`;
+    item.className = `planet-route ${state.activePlanetId === def.id ? "active" : ""}${unlocked || completable ? "" : " locked"}${completable ? " ready" : ""}`;
     item.innerHTML = `
       <div>
         <strong>${planet.name}</strong>
         <span>${def.desc}</span>
-        <small>緑化率 ${Math.floor(planet.environment.green)}% / 畑 ${planet.unlockedPlots}/${def.maxPlots}</small>
+        <small>緑化率 ${Math.floor(planet.environment.green)}% / 畑 ${planet.unlockedPlots}/${def.maxPlots}${completable ? " / 開拓達成できます" : ""}</small>
       </div>
-      <button class="mini-action" ${unlocked && state.activePlanetId !== def.id ? "" : "disabled"} data-planet="${def.id}">
-        ${state.activePlanetId === def.id ? "滞在中" : unlocked ? "移動" : "未開通"}
+      <button class="mini-action" ${
+        completable ? `data-complete-planet="${def.id}"` : unlocked && state.activePlanetId !== def.id ? `data-planet="${def.id}"` : "disabled"
+      }>
+        ${completable ? "開拓達成" : state.activePlanetId === def.id ? "滞在中" : unlocked ? "移動" : "未開通"}
       </button>
     `;
     els.planetList.appendChild(item);
@@ -1334,10 +1343,8 @@ function renderField() {
           harvest(plot.id);
           playHarvestSound();
           const discoveryText = pendingDiscoveryName ? ` 図鑑に${pendingDiscoveryName}を登録しました。` : "";
-          const routeText = pendingPlanetUnlockName ? ` ${pendingPlanetUnlockName}への航路が開きました。` : "";
-          setLog(`${cropName}をすぽっと収穫しました。${discoveryText}${routeText}`);
+          setLog(`${cropName}をすぽっと収穫しました。${discoveryText}`);
           pendingDiscoveryName = null;
-          pendingPlanetUnlockName = null;
           clearInvalidParents();
           saveAndRender();
         } else {
@@ -1806,6 +1813,12 @@ els.missionList.addEventListener("click", (event) => {
 });
 
 els.planetList.addEventListener("click", (event) => {
+  const completeButton = event.target.closest("[data-complete-planet]");
+  if (completeButton) {
+    completePlanet(completeButton.dataset.completePlanet);
+    return;
+  }
+
   const button = event.target.closest("[data-planet]");
   if (button) {
     switchPlanet(button.dataset.planet);
