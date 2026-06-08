@@ -1246,6 +1246,38 @@ function render() {
   renderDeliveryModal();
 }
 
+function cropGrowthStage(crop) {
+  if (!crop) return "empty";
+  const progress = cropProgress(crop);
+  if (progress >= 1) return "ready";
+  return progress < 0.5 ? "seedling" : "growing";
+}
+
+function renderTick() {
+  renderStats();
+  let needsFieldRender = false;
+
+  state.plots.forEach((plot) => {
+    const button = els.fieldGrid.querySelector(`[data-plot-id="${plot.id}"]`);
+    const expectedStage = plot.id >= state.unlockedPlots ? "locked" : cropGrowthStage(plot.crop);
+    if (!button || button.dataset.growthStage !== expectedStage || button.dataset.cropId !== (plot.crop?.id ?? "")) {
+      needsFieldRender = true;
+      return;
+    }
+    if (plot.crop) {
+      const progress = cropProgress(plot.crop);
+      const progressBar = button.querySelector(".progress span");
+      if (progressBar) {
+        progressBar.style.width = `${Math.floor(progress * 100)}%`;
+      }
+    }
+  });
+
+  if (needsFieldRender) {
+    renderField();
+  }
+}
+
 function renderStats() {
   els.terraStage.textContent = terraStageName();
   els.greenRate.textContent = `${Math.floor(state.environment.green)}%`;
@@ -1316,9 +1348,12 @@ function renderField() {
   state.plots.forEach((plot) => {
     const button = document.createElement("button");
     button.type = "button";
+    button.dataset.plotId = plot.id;
+    button.dataset.cropId = plot.crop?.id ?? "";
 
     if (plot.id >= state.unlockedPlots) {
       button.className = "plot locked";
+      button.dataset.growthStage = "locked";
       button.innerHTML = `<span>未開拓</span><small>緑化で解放</small>`;
       els.fieldGrid.appendChild(button);
       return;
@@ -1326,12 +1361,16 @@ function renderField() {
 
     button.className = `plot${plot.crop ? "" : " empty"}`;
     if (!plot.crop) {
+      button.dataset.growthStage = "empty";
       button.textContent = "空き畑";
       button.addEventListener("click", () => plant(plot.id));
     } else {
       const progress = cropProgress(plot.crop);
       const ready = progress >= 1;
       const isSeedling = progress < 0.5;
+      const growthStage = ready ? "ready" : isSeedling ? "seedling" : "growing";
+      button.dataset.cropId = plot.crop.id;
+      button.dataset.growthStage = growthStage;
       button.innerHTML = `
         ${ready ? cropImageMarkup(plot.crop, "crop-art plot-art", plot.crop.name) : `<div class="${isSeedling ? "seedling-icon" : `crop-icon crop-${plot.crop.visual}`}"></div>`}
         <div class="plot-name">${ready ? "収穫OK" : isSeedling ? "芽吹き中" : plot.crop.name}</div>
@@ -1886,4 +1925,4 @@ els.resetBtn.addEventListener("click", () => {
 });
 
 render();
-setInterval(render, 1000);
+setInterval(renderTick, 1000);
