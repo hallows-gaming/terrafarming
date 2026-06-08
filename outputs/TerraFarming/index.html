@@ -7,115 +7,118 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Asteroid farm log</p>
-          <h1>TerraFarming</h1>
-        </div>
-        <button id="resetBtn" class="icon-button" title="セーブを初期化" aria-label="セーブを初期化">↺</button>
-      </header>
-
-      <section class="asteroid" aria-label="小惑星ステータス">
-        <div class="planet" aria-hidden="true">
-          <div class="planet-core"></div>
-          <div class="sprout sprout-a"></div>
-          <div class="sprout sprout-b"></div>
-          <div class="sprout sprout-c"></div>
-        </div>
-        <div class="planet-readout">
-          <div>
-            <span>開拓段階</span>
-            <strong id="terraStage">荒野</strong>
+    <main class="phone-shell">
+      <div class="app">
+        <header class="hud-top">
+          <div class="title-row">
+            <div>
+              <p class="eyebrow">Asteroid farm</p>
+              <h1>TerraFarming</h1>
+            </div>
+            <button id="resetBtn" class="icon-button" title="セーブを初期化" aria-label="セーブを初期化">↺</button>
           </div>
-          <div>
-            <span>緑化率</span>
-            <strong id="greenRate">0%</strong>
-          </div>
-          <div>
-            <span>酸素</span>
-            <strong id="oxygen">0</strong>
-          </div>
-          <div>
-            <span>水分</span>
-            <strong id="water">0</strong>
-          </div>
-          <div>
-            <span>窒素</span>
-            <strong id="nitrogen">0</strong>
-          </div>
-        </div>
-      </section>
 
-      <section class="resources" aria-label="資源">
-        <div><span>食料</span><strong id="food">0</strong></div>
-        <div><span>コイン</span><strong id="coins">0</strong></div>
-        <div><span>テラP</span><strong id="terraPoints">0</strong></div>
-      </section>
+          <section class="asteroid" aria-label="小惑星ステータス">
+            <div class="planet" aria-hidden="true">
+              <div class="planet-core"></div>
+              <div class="sprout sprout-a"></div>
+              <div class="sprout sprout-b"></div>
+              <div class="sprout sprout-c"></div>
+            </div>
+            <div class="stage-card">
+              <span>開拓段階</span>
+              <strong id="terraStage">荒野</strong>
+              <div class="green-meter" aria-label="緑化率">
+                <span id="greenBar"></span>
+              </div>
+              <small>緑化率 <b id="greenRate">0%</b></small>
+            </div>
+          </section>
 
-      <nav class="tabs" aria-label="表示切替">
-        <button class="tab active" data-tab="field">畑</button>
-        <button class="tab" data-tab="missions">開拓</button>
-        <button class="tab" data-tab="storage">倉庫</button>
-        <button class="tab" data-tab="lab">交配ラボ</button>
-      </nav>
+          <section class="hud-grid" aria-label="資源と環境">
+            <div class="hud-pill"><span>🍞</span><small>食料</small><strong id="food">0</strong></div>
+            <div class="hud-pill"><span>ⓒ</span><small>コイン</small><strong id="coins">0</strong></div>
+            <div class="hud-pill"><span>TP</span><small>テラP</small><strong id="terraPoints">0</strong></div>
+            <div class="hud-pill env"><span>O2</span><small>酸素</small><strong id="oxygen">0</strong></div>
+            <div class="hud-pill env"><span>💧</span><small>水分</small><strong id="water">0</strong></div>
+            <div class="hud-pill env"><span>N</span><small>窒素</small><strong id="nitrogen">0</strong></div>
+          </section>
+        </header>
 
-      <section id="fieldPanel" class="panel active" aria-label="畑">
-        <div class="section-head">
-          <h2>植える種</h2>
-          <span id="selectedSeedLabel">スターキャロット</span>
-        </div>
-        <div id="seedPicker" class="seed-picker"></div>
-        <div id="fieldGrid" class="field-grid"></div>
-        <div class="action-row">
-          <button id="plantAllBtn" class="primary">空き畑に植える</button>
-          <button id="harvestAllBtn" class="secondary">収穫する</button>
-        </div>
-      </section>
+        <div class="screen-stack">
+          <section id="fieldPanel" class="panel field-panel active" aria-label="畑">
+            <div class="field-status">
+              <div>
+                <span>選択中の種</span>
+                <strong id="selectedSeedLabel">スターキャロット</strong>
+              </div>
+              <button id="plantAllBtn" class="mini-action">まとめて植える</button>
+            </div>
+            <div id="fieldGrid" class="field-grid"></div>
+            <button id="harvestAllBtn" class="primary wide">収穫できる作物を集める</button>
+          </section>
 
-      <section id="missionsPanel" class="panel" aria-label="開拓ミッション">
-        <div class="section-head">
-          <h2>開拓ミッション</h2>
-          <span id="missionProgress">0/0</span>
-        </div>
-        <div id="missionList" class="mission-list"></div>
-        <div class="section-head unlock-head">
-          <h2>設備アップグレード</h2>
-          <span id="bonusSummary">ボーナス</span>
-        </div>
-        <div id="upgradeList" class="upgrade-list"></div>
-        <div class="section-head unlock-head">
-          <h2>環境メモ</h2>
-          <span id="unlockSummary">次の目標</span>
-        </div>
-        <div id="unlockList" class="unlock-list"></div>
-      </section>
+          <section id="seedPanel" class="panel management-panel" aria-label="種">
+            <div class="section-head">
+              <h2>種トレイ</h2>
+              <span>栽培候補</span>
+            </div>
+            <div id="seedPicker" class="seed-picker"></div>
+          </section>
 
-      <section id="storagePanel" class="panel" aria-label="倉庫">
-        <div class="section-head">
-          <h2>収穫した野菜</h2>
-          <span id="storageCount">0個</span>
-        </div>
-        <button id="sellAllBtn" class="secondary wide">すべて売る</button>
-        <div id="storageList" class="list empty"></div>
-      </section>
+          <section id="storagePanel" class="panel management-panel" aria-label="倉庫">
+            <div class="section-head">
+              <h2>収穫した野菜</h2>
+              <span id="storageCount">0個</span>
+            </div>
+            <button id="sellAllBtn" class="secondary wide">すべて売る</button>
+            <div id="storageList" class="list empty"></div>
+          </section>
 
-      <section id="labPanel" class="panel" aria-label="交配ラボ">
-        <div class="section-head">
-          <h2>次世代の種を作る</h2>
-          <span id="seedName">スターキャロット</span>
-        </div>
-        <div class="lab-slots">
-          <button id="parentA" class="parent-slot">親Aを選択</button>
-          <button id="parentB" class="parent-slot">親Bを選択</button>
-        </div>
-        <button id="breedBtn" class="primary wide" disabled>交配する</button>
-        <div id="labResult" class="lab-result"></div>
-      </section>
+          <section id="missionsPanel" class="panel management-panel" aria-label="開拓">
+            <div class="section-head">
+              <h2>開拓ミッション</h2>
+              <span id="missionProgress">0/0</span>
+            </div>
+            <div id="missionList" class="mission-list"></div>
+            <div class="section-head unlock-head">
+              <h2>設備アップグレード</h2>
+              <span id="bonusSummary">ボーナス</span>
+            </div>
+            <div id="upgradeList" class="upgrade-list"></div>
+            <div class="section-head unlock-head">
+              <h2>環境メモ</h2>
+              <span id="unlockSummary">次の目標</span>
+            </div>
+            <div id="unlockList" class="unlock-list"></div>
+          </section>
 
-      <footer class="log" aria-live="polite">
-        <span id="logText">小惑星の朝です。まずは種を植えましょう。</span>
-      </footer>
+          <section id="labPanel" class="panel management-panel" aria-label="交配ラボ">
+            <div class="section-head">
+              <h2>次世代の種を作る</h2>
+              <span id="seedName">スターキャロット</span>
+            </div>
+            <div class="lab-slots">
+              <button id="parentA" class="parent-slot">親Aを選択</button>
+              <button id="parentB" class="parent-slot">親Bを選択</button>
+            </div>
+            <button id="breedBtn" class="primary wide" disabled>交配する</button>
+            <div id="labResult" class="lab-result"></div>
+          </section>
+        </div>
+
+        <footer class="toast" aria-live="polite">
+          <span id="logText">小惑星の朝です。まずは種を植えましょう。</span>
+        </footer>
+
+        <nav class="tabs" aria-label="表示切替">
+          <button class="tab active" data-tab="field"><span>🌱</span>畑</button>
+          <button class="tab" data-tab="seed"><span>🌰</span>種</button>
+          <button class="tab" data-tab="storage"><span>📦</span>倉庫</button>
+          <button class="tab" data-tab="missions"><span>🛰</span>開拓</button>
+          <button class="tab" data-tab="lab"><span>🧪</span>ラボ</button>
+        </nav>
+      </div>
     </main>
 
     <script src="app.js"></script>

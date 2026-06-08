@@ -137,6 +137,7 @@ let pendingSellId = null;
 const els = {
   terraStage: document.querySelector("#terraStage"),
   greenRate: document.querySelector("#greenRate"),
+  greenBar: document.querySelector("#greenBar"),
   oxygen: document.querySelector("#oxygen"),
   water: document.querySelector("#water"),
   nitrogen: document.querySelector("#nitrogen"),
@@ -165,6 +166,7 @@ const els = {
   logText: document.querySelector("#logText"),
   resetBtn: document.querySelector("#resetBtn")
 };
+let toastTimer = null;
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -568,6 +570,13 @@ function nextUnlockText() {
 
 function setLog(message) {
   els.logText.textContent = message;
+  const toast = els.logText.closest(".toast");
+  if (!toast) return;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2600);
 }
 
 function saveAndRender() {
@@ -587,6 +596,9 @@ function render() {
 function renderStats() {
   els.terraStage.textContent = terraStageName();
   els.greenRate.textContent = `${Math.floor(state.environment.green)}%`;
+  if (els.greenBar) {
+    els.greenBar.style.width = `${Math.min(100, Math.floor(state.environment.green))}%`;
+  }
   els.oxygen.textContent = state.environment.oxygen;
   els.water.textContent = state.environment.water;
   els.nitrogen.textContent = state.environment.nitrogen;

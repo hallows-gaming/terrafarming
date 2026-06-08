@@ -1,16 +1,16 @@
 :root {
-  --bg: #eef5f0;
+  --bg: #dfe8e2;
   --ink: #1f2a24;
-  --muted: #68746d;
+  --muted: #6d766f;
   --panel: #fffdf7;
   --line: #d8ded6;
   --green: #4f9d69;
-  --deep-green: #2d6b4b;
+  --deep-green: #28674a;
   --sky: #79a7c8;
   --amber: #d59d3a;
   --rose: #d96a63;
   --soil: #7c604a;
-  --shadow: 0 12px 28px rgba(43, 62, 50, 0.16);
+  --shadow: 0 18px 42px rgba(32, 45, 37, 0.22);
 }
 
 * {
@@ -18,53 +18,74 @@
 }
 
 body {
-  margin: 0;
   min-height: 100vh;
+  margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at 15% 5%, rgba(121, 167, 200, 0.3), transparent 28rem),
-    linear-gradient(180deg, #f7fbf8 0%, var(--bg) 52%, #e2ecdf 100%);
+    radial-gradient(circle at 24% 14%, rgba(121, 167, 200, 0.28), transparent 24rem),
+    linear-gradient(135deg, #f1f6f3 0%, var(--bg) 45%, #cddfd3 100%);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 button {
   border: 0;
-  font: inherit;
   color: inherit;
+  font: inherit;
   cursor: pointer;
 }
 
-.app {
-  width: min(100%, 520px);
-  min-height: 100vh;
-  margin: 0 auto;
-  padding: 18px 14px 22px;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.eyebrow {
-  margin: 0 0 2px;
-  color: var(--muted);
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
 h1,
-h2 {
+h2,
+p {
   margin: 0;
   letter-spacing: 0;
 }
 
+.phone-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 18px;
+}
+
+.app {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: min(100%, 420px);
+  height: min(860px, calc(100vh - 36px));
+  min-height: 720px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(248, 252, 249, 0.96), rgba(233, 242, 232, 0.96)),
+    #edf4ee;
+  box-shadow:
+    0 0 0 9px #1f2825,
+    0 28px 70px rgba(25, 38, 31, 0.32);
+}
+
+.hud-top {
+  padding: 18px 16px 10px;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 h1 {
-  font-size: 2rem;
+  font-size: 1.78rem;
   line-height: 1.05;
 }
 
@@ -74,33 +95,36 @@ h2 {
 
 .icon-button {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
   place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: 0 4px 12px rgba(43, 62, 50, 0.08);
-  font-size: 1.4rem;
+  border: 1px solid rgba(40, 103, 74, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 253, 247, 0.82);
+  box-shadow: 0 5px 14px rgba(43, 62, 50, 0.1);
+  color: var(--deep-green);
+  font-size: 1.16rem;
+  font-weight: 900;
 }
 
 .asteroid {
   display: grid;
-  grid-template-columns: 132px 1fr;
+  grid-template-columns: 112px 1fr;
   gap: 12px;
   align-items: center;
-  margin-bottom: 12px;
+  margin-top: 12px;
 }
 
 .planet {
   position: relative;
-  width: 132px;
+  width: 112px;
   aspect-ratio: 1;
 }
 
 .planet-core {
   position: absolute;
-  inset: 12px;
+  inset: 8px;
   border-radius: 50%;
   background:
     radial-gradient(circle at 34% 25%, #b4c9b8 0 16%, transparent 17%),
@@ -144,174 +168,196 @@ body[data-stage="緑の星"] .planet-core {
 .sprout::after {
   content: "";
   position: absolute;
+  left: 4px;
+  top: 4px;
   width: 18px;
   height: 10px;
   border-radius: 50%;
   background: #79b66e;
-  left: 4px;
-  top: 4px;
   transform: rotate(-22deg);
 }
 
 .sprout-a {
-  left: 40px;
-  top: 18px;
+  left: 36px;
+  top: 12px;
   transform: rotate(-18deg);
 }
 
 .sprout-b {
-  right: 30px;
-  top: 48px;
+  right: 24px;
+  top: 42px;
   transform: rotate(28deg);
 }
 
 .sprout-c {
-  left: 62px;
-  bottom: 20px;
+  left: 54px;
+  bottom: 16px;
   transform: rotate(8deg);
 }
 
-.planet-readout,
-.resources,
-.panel,
-.log {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 253, 247, 0.88);
-  box-shadow: 0 8px 18px rgba(43, 62, 50, 0.08);
-}
-
-.planet-readout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  overflow: hidden;
-}
-
-.planet-readout div,
-.resources div {
+.stage-card {
   min-width: 0;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.42);
+  padding: 12px;
+  border: 1px solid rgba(40, 103, 74, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 253, 247, 0.76);
+  box-shadow: 0 10px 22px rgba(43, 62, 50, 0.09);
 }
 
-.planet-readout span,
-.resources span,
-.stat-label {
+.stage-card span,
+.field-status span,
+.section-head span {
   display: block;
   color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.planet-readout strong,
-.resources strong {
-  display: block;
-  margin-top: 2px;
-  font-size: 1.1rem;
-}
-
-.resources {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.tabs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.tab {
-  min-height: 40px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 253, 247, 0.7);
-  color: var(--muted);
+  font-size: 0.74rem;
   font-weight: 700;
 }
 
-.tab.active {
-  border-color: var(--deep-green);
-  background: var(--deep-green);
-  color: white;
+.stage-card strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 1.36rem;
+}
+
+.stage-card small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.green-meter {
+  height: 9px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(45, 63, 51, 0.12);
+}
+
+.green-meter span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #78ba62, #4f9d69);
+}
+
+.hud-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.hud-pill {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(40, 103, 74, 0.13);
+  border-radius: 13px;
+  background: rgba(255, 253, 247, 0.8);
+  box-shadow: 0 4px 12px rgba(43, 62, 50, 0.07);
+}
+
+.hud-pill span {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(79, 157, 105, 0.14);
+  color: var(--deep-green);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.hud-pill small {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hud-pill strong {
+  grid-column: 2;
+  min-width: 0;
+  margin-top: -2px;
+  overflow: hidden;
+  font-size: 0.94rem;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+}
+
+.hud-pill.env span {
+  background: rgba(121, 167, 200, 0.17);
+  color: #3f6f91;
+}
+
+.screen-stack {
+  min-height: 0;
+  padding: 0 14px 86px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .panel {
   display: none;
-  padding: 12px;
 }
 
 .panel.active {
   display: block;
 }
 
+.field-panel {
+  padding-top: 2px;
+}
+
+.field-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(40, 103, 74, 0.14);
+  border-radius: 17px;
+  background: rgba(255, 253, 247, 0.74);
+}
+
+.field-status strong {
+  display: block;
+  max-width: 210px;
+  overflow: hidden;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.seed-picker {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.seed-card {
-  display: grid;
-  min-height: 132px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
-  text-align: left;
-}
-
-.seed-card.selected {
-  border-color: var(--green);
-  box-shadow: 0 0 0 2px rgba(79, 157, 105, 0.18);
-}
-
-.seed-card .crop-icon {
-  width: 28px;
-  height: 36px;
-  margin-bottom: 4px;
-}
-
-.seed-card .crop-icon::before {
-  width: 18px;
-  height: 8px;
-  margin-top: -6px;
-}
-
-.seed-card strong {
-  font-size: 0.82rem;
-  line-height: 1.2;
-}
-
-.seed-card span,
-.seed-card small {
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.25;
+  gap: 10px;
 }
 
 .plot {
+  position: relative;
   display: grid;
-  min-height: 112px;
-  padding: 8px;
-  border: 1px solid #cfc4ad;
-  border-radius: 8px;
+  min-height: 128px;
+  padding: 9px;
+  overflow: hidden;
+  border: 1px solid #c9b58f;
+  border-radius: 15px;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.08) 49%, transparent 50%),
     linear-gradient(0deg, rgba(255, 255, 255, 0.08) 49%, transparent 50%),
-    #8b6b4f;
-  background-size: 18px 18px;
+    linear-gradient(180deg, #9d7650, #7d5d44);
+  background-size: 20px 20px, 20px 20px, auto;
+  box-shadow: inset 0 8px 14px rgba(255, 255, 255, 0.08), 0 9px 15px rgba(73, 53, 35, 0.16);
   color: white;
   text-align: left;
 }
@@ -319,6 +365,8 @@ body[data-stage="緑の星"] .planet-core {
 .plot.empty {
   place-items: center;
   color: #f3eadc;
+  font-size: 0.84rem;
+  font-weight: 900;
 }
 
 .plot.locked {
@@ -330,21 +378,23 @@ body[data-stage="緑の星"] .planet-core {
     #6b6258;
   color: #d9d2c7;
   cursor: default;
+  text-align: center;
 }
 
 .plot.locked span {
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .plot.locked small {
   color: #c5bcad;
+  font-size: 0.72rem;
 }
 
 .crop-icon {
   align-self: center;
   justify-self: center;
-  width: 42px;
-  height: 56px;
+  width: 48px;
+  height: 62px;
   border-radius: 50% 50% 44% 44%;
   background: linear-gradient(180deg, #ffb04f 0%, #e46a44 100%);
   box-shadow: inset -8px -8px 0 rgba(89, 35, 22, 0.14);
@@ -362,8 +412,8 @@ body[data-stage="緑の星"] .planet-core {
 }
 
 .crop-size {
-  width: 52px;
-  height: 58px;
+  width: 56px;
+  height: 66px;
   background: linear-gradient(180deg, #f4a84a 0%, #c95c3d 100%);
 }
 
@@ -393,13 +443,17 @@ body[data-stage="緑の星"] .planet-core {
 
 .plot-name {
   align-self: end;
-  font-size: 0.82rem;
-  font-weight: 800;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(31, 42, 36, 0.36);
 }
 
 .progress {
   height: 7px;
-  margin-top: 5px;
+  margin-top: 6px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.3);
@@ -412,79 +466,158 @@ body[data-stage="緑の星"] .planet-core {
   background: #9bd26f;
 }
 
-.action-row {
+.management-panel {
+  min-height: 100%;
+  padding: 14px;
+  border: 1px solid rgba(40, 103, 74, 0.13);
+  border-radius: 18px;
+  background: rgba(255, 253, 247, 0.76);
+  box-shadow: 0 10px 24px rgba(43, 62, 50, 0.08);
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.unlock-head {
+  margin-top: 16px;
+}
+
+.seed-picker {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 12px;
+  grid-auto-columns: minmax(138px, 44%);
+  grid-auto-flow: column;
+  gap: 10px;
+  margin-inline: -2px;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.seed-card {
+  display: grid;
+  min-height: 168px;
+  align-content: start;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(40, 103, 74, 0.15);
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 18px rgba(43, 62, 50, 0.08);
+  scroll-snap-align: start;
+  text-align: left;
+}
+
+.seed-card.selected {
+  border-color: var(--green);
+  background: #f2fbf0;
+  box-shadow: 0 0 0 3px rgba(79, 157, 105, 0.18), 0 10px 20px rgba(43, 62, 50, 0.1);
+}
+
+.seed-card .crop-icon {
+  width: 34px;
+  height: 44px;
+  margin-bottom: 2px;
+}
+
+.seed-card .crop-icon::before {
+  width: 20px;
+  height: 12px;
+  margin-top: -7px;
+}
+
+.seed-card strong {
+  font-size: 0.9rem;
+  line-height: 1.18;
+}
+
+.seed-card span,
+.seed-card small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.primary,
+.secondary,
+.mini-action {
+  border-radius: 12px;
+  font-weight: 900;
 }
 
 .primary,
 .secondary {
-  min-height: 44px;
-  border-radius: 8px;
-  font-weight: 800;
+  min-height: 46px;
 }
 
 .primary {
-  background: var(--green);
+  background: linear-gradient(180deg, #5bad72, var(--deep-green));
   color: white;
+  box-shadow: 0 8px 16px rgba(40, 103, 74, 0.2);
 }
 
 .primary:disabled {
   background: #aeb8b0;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .secondary {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(128, 96, 43, 0.16);
   background: #fff8e8;
 }
 
 .wide {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+.mini-action {
+  min-width: 58px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(47, 92, 66, 0.22);
+  background: #f4f8f2;
+  color: var(--deep-green);
+  font-size: 0.76rem;
 }
 
-.section-head span {
-  color: var(--muted);
-  font-size: 0.86rem;
-}
-
-.unlock-head {
-  margin-top: 14px;
+.mini-action:disabled {
+  border-color: var(--line);
+  background: #eef0eb;
+  color: #8a948d;
+  cursor: not-allowed;
 }
 
 .mission-list,
 .upgrade-list,
-.unlock-list {
+.unlock-list,
+.list {
   display: grid;
-  gap: 8px;
+  gap: 9px;
 }
 
 .mission,
 .upgrade,
-.unlock {
-  padding: 10px;
+.unlock,
+.item {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: white;
 }
 
 .mission,
-.upgrade {
+.upgrade,
+.item {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: center;
+  padding: 11px;
 }
 
 .mission div,
@@ -494,19 +627,21 @@ body[data-stage="緑の星"] .planet-core {
 }
 
 .mission strong,
-.upgrade strong {
+.upgrade strong,
+.item-name {
   font-size: 0.94rem;
+  font-weight: 900;
 }
 
 .mission span,
 .upgrade span {
-  color: var(--ink);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
 }
 
 .mission small,
 .upgrade small {
   color: var(--muted);
+  font-size: 0.76rem;
 }
 
 .mission.done,
@@ -517,26 +652,7 @@ body[data-stage="緑の星"] .planet-core {
 
 .mission.done small {
   color: var(--deep-green);
-  font-weight: 800;
-}
-
-.mini-action {
-  min-width: 54px;
-  min-height: 34px;
-  padding: 6px 9px;
-  border: 1px solid rgba(47, 92, 66, 0.22);
-  border-radius: 8px;
-  background: #f4f8f2;
-  color: var(--deep-green);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.mini-action:disabled {
-  border-color: var(--line);
-  background: #eef0eb;
-  color: #8a948d;
-  cursor: not-allowed;
+  font-weight: 900;
 }
 
 .mini-action.sell {
@@ -554,39 +670,27 @@ body[data-stage="緑の星"] .planet-core {
 }
 
 .unlock {
+  padding: 10px;
   color: #405448;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
 }
 
 .list {
-  display: grid;
-  gap: 8px;
   margin-top: 10px;
 }
 
 .list.empty::before {
   content: "まだ収穫物がありません";
   display: block;
-  padding: 28px 10px;
+  padding: 30px 10px;
   color: var(--muted);
   text-align: center;
-}
-
-.item {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
 }
 
 .item-actions {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 7px;
   justify-items: end;
 }
 
@@ -608,38 +712,37 @@ body[data-stage="緑の星"] .planet-core {
 
 .item-name {
   display: block;
-  font-weight: 800;
 }
 
 .item-stats {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .chip {
-  padding: 3px 6px;
+  padding: 3px 7px;
   border-radius: 999px;
   background: #eef3ed;
   color: #405448;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
 }
 
 .lab-slots {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 9px;
 }
 
 .parent-slot {
-  min-height: 70px;
+  min-height: 76px;
   padding: 8px;
   border: 1px dashed #aab6ad;
-  border-radius: 8px;
+  border-radius: 14px;
   background: white;
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .parent-slot.filled {
@@ -655,37 +758,115 @@ body[data-stage="緑の星"] .planet-core {
   font-size: 0.9rem;
 }
 
-.log {
-  margin-top: 12px;
-  padding: 12px;
-  color: #405448;
-  font-size: 0.9rem;
+.toast {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 84px;
+  z-index: 5;
+  padding: 11px 13px;
+  border: 1px solid rgba(40, 103, 74, 0.18);
+  border-radius: 16px;
+  background: rgba(31, 42, 36, 0.88);
+  box-shadow: 0 14px 28px rgba(31, 42, 36, 0.24);
+  color: white;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px);
+  transition: opacity 180ms ease, transform 180ms ease;
 }
 
-@media (max-width: 390px) {
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding: 9px 10px 12px;
+  border-top: 1px solid rgba(40, 103, 74, 0.14);
+  background: rgba(250, 253, 249, 0.94);
+  box-shadow: 0 -10px 26px rgba(43, 62, 50, 0.1);
+}
+
+.tab {
+  display: grid;
+  min-width: 0;
+  min-height: 52px;
+  place-items: center;
+  padding: 5px 2px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.tab span {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.tab.active {
+  border-color: rgba(79, 157, 105, 0.28);
+  background: #eaf6e8;
+  color: var(--deep-green);
+}
+
+@media (max-width: 480px) {
+  .phone-shell {
+    display: block;
+    padding: 0;
+  }
+
   .app {
-    padding-inline: 10px;
+    width: 100%;
+    height: 100vh;
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .hud-top {
+    padding-inline: 12px;
   }
 
   .asteroid {
-    grid-template-columns: 112px 1fr;
+    grid-template-columns: 96px 1fr;
   }
 
   .planet {
-    width: 112px;
+    width: 96px;
+  }
+
+  .hud-grid {
+    gap: 5px;
+  }
+
+  .hud-pill {
+    padding: 6px;
+  }
+
+  .screen-stack {
+    padding-inline: 10px;
   }
 
   .plot {
-    min-height: 102px;
+    min-height: 112px;
     padding: 7px;
-  }
-
-  h1 {
-    font-size: 1.75rem;
-  }
-
-  .tab {
-    font-size: 0.84rem;
   }
 
   .mission,
@@ -695,12 +876,6 @@ body[data-stage="緑の星"] .planet-core {
   }
 
   .item-actions {
-    grid-template-columns: 1fr;
-    justify-content: stretch;
     justify-items: stretch;
-  }
-
-  .item-actions > strong {
-    justify-self: end;
   }
 }
