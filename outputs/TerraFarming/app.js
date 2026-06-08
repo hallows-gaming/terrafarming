@@ -133,6 +133,8 @@ let selectedParentA = null;
 let selectedParentB = null;
 let audioContext = null;
 let pendingSellId = null;
+let bgmTimer = null;
+let bgmMode = null;
 
 const els = {
   app: document.querySelector(".app"),
@@ -171,7 +173,11 @@ const els = {
 let toastTimer = null;
 
 function startGame() {
+  if (els.app.classList.contains("started")) return;
+  playStartSound();
+  stopBgm();
   els.app.classList.add("started");
+  setTimeout(() => startBgm("play"), 520);
 }
 
 function loadState() {
@@ -834,6 +840,50 @@ function tone(freq, start, duration, type, volume) {
   osc.stop(ctx.currentTime + start + duration + 0.02);
 }
 
+function playBgmPattern(mode) {
+  if (mode === "title") {
+    [
+      [392, 0],
+      [494, 0.34],
+      [587, 0.68],
+      [784, 1.08],
+      [659, 1.55],
+      [587, 2.05]
+    ].forEach(([freq, start]) => tone(freq, start, 0.28, "sine", 0.0045 * SOUND_VOLUME));
+    tone(196, 0, 2.55, "triangle", 0.0024 * SOUND_VOLUME);
+    return;
+  }
+
+  [
+    [330, 0],
+    [392, 0.28],
+    [440, 0.56],
+    [523, 0.92],
+    [440, 1.34],
+    [392, 1.72],
+    [349, 2.1],
+    [392, 2.52]
+  ].forEach(([freq, start]) => tone(freq, start, 0.22, "triangle", 0.0038 * SOUND_VOLUME));
+  tone(165, 0, 1.25, "sine", 0.0024 * SOUND_VOLUME);
+  tone(196, 1.42, 1.25, "sine", 0.0024 * SOUND_VOLUME);
+}
+
+function startBgm(mode) {
+  if (bgmMode === mode && bgmTimer) return;
+  stopBgm();
+  bgmMode = mode;
+  playBgmPattern(mode);
+  bgmTimer = setInterval(() => playBgmPattern(mode), mode === "title" ? 3200 : 3000);
+}
+
+function stopBgm() {
+  if (bgmTimer) {
+    clearInterval(bgmTimer);
+    bgmTimer = null;
+  }
+  bgmMode = null;
+}
+
 function playButtonSound() {
   tone(420, 0, 0.045, "triangle", 0.025 * SOUND_VOLUME);
 }
@@ -860,12 +910,21 @@ function playRewardSound() {
   tone(784, 0.16, 0.12, "triangle", 0.03 * SOUND_VOLUME);
 }
 
+function playStartSound() {
+  tone(196, 0, 0.08, "sine", 0.045 * SOUND_VOLUME);
+  tone(392, 0.04, 0.12, "triangle", 0.042 * SOUND_VOLUME);
+  tone(523, 0.11, 0.13, "triangle", 0.04 * SOUND_VOLUME);
+  tone(659, 0.19, 0.18, "sine", 0.034 * SOUND_VOLUME);
+  tone(988, 0.28, 0.22, "triangle", 0.026 * SOUND_VOLUME);
+}
+
 document.addEventListener("pointerdown", (event) => {
   if (event.target.closest("button")) {
     playButtonSound();
   }
 });
 
+els.titleScreen.addEventListener("pointerdown", () => startBgm("title"));
 els.titleScreen.addEventListener("click", startGame);
 els.titleScreen.addEventListener("keydown", (event) => {
   if (event.key === "Enter" || event.key === " ") {
