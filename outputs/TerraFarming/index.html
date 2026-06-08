@@ -9,12 +9,22 @@
   <body>
     <main class="phone-shell">
       <div class="app">
+        <section id="titleScreen" class="title-screen" aria-label="タイトル画面" role="button" tabindex="0">
+          <div class="title-planet" aria-hidden="true">
+            <div class="planet-core"></div>
+            <div class="sprout sprout-a"></div>
+            <div class="sprout sprout-b"></div>
+            <div class="sprout sprout-c"></div>
+          </div>
+          <div class="title-copy">
+            <span>Asteroid farm</span>
+            <h1>TerraFarming</h1>
+            <p>Tap to start</p>
+          </div>
+        </section>
+
         <header class="hud-top">
-          <div class="title-row">
-            <div>
-              <p class="eyebrow">Asteroid farm</p>
-              <h1>TerraFarming</h1>
-            </div>
+          <div class="hud-actions">
             <button id="resetBtn" class="icon-button" title="セーブを初期化" aria-label="セーブを初期化">↺</button>
           </div>
 

@@ -135,6 +135,8 @@ let audioContext = null;
 let pendingSellId = null;
 
 const els = {
+  app: document.querySelector(".app"),
+  titleScreen: document.querySelector("#titleScreen"),
   terraStage: document.querySelector("#terraStage"),
   greenRate: document.querySelector("#greenRate"),
   greenBar: document.querySelector("#greenBar"),
@@ -167,6 +169,10 @@ const els = {
   resetBtn: document.querySelector("#resetBtn")
 };
 let toastTimer = null;
+
+function startGame() {
+  els.app.classList.add("started");
+}
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -857,6 +863,14 @@ function playRewardSound() {
 document.addEventListener("pointerdown", (event) => {
   if (event.target.closest("button")) {
     playButtonSound();
+  }
+});
+
+els.titleScreen.addEventListener("click", startGame);
+els.titleScreen.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    startGame();
   }
 });
 

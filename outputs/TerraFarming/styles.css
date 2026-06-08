@@ -66,15 +66,73 @@ p {
     0 28px 70px rgba(25, 38, 31, 0.32);
 }
 
-.hud-top {
-  padding: 18px 16px 10px;
+.title-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 28px;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(121, 167, 200, 0.32), transparent 15rem),
+    linear-gradient(180deg, #f7fbf8 0%, #e2eddf 58%, #cadfce 100%);
+  color: var(--ink);
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 220ms ease, visibility 220ms ease;
 }
 
-.title-row {
+.app.started .title-screen {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.title-planet {
+  position: relative;
+  width: 188px;
+  aspect-ratio: 1;
+}
+
+.title-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.title-copy span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.title-copy h1 {
+  font-size: 2.44rem;
+  line-height: 1;
+}
+
+.title-copy p {
+  margin-top: 12px;
+  padding: 10px 18px;
+  border: 1px solid rgba(40, 103, 74, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 253, 247, 0.72);
+  color: var(--deep-green);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.hud-top {
+  padding: 12px 16px 10px;
+}
+
+.hud-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: flex-end;
+  min-height: 38px;
 }
 
 .eyebrow {
