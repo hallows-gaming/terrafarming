@@ -836,6 +836,42 @@ body[data-stage="緑の星"] .planet-core {
   gap: 9px;
 }
 
+.list-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 5px 2px 0;
+  color: var(--muted);
+  font-size: 0.73rem;
+  font-weight: 900;
+}
+
+.list-group-heading strong {
+  color: inherit;
+  font-size: inherit;
+}
+
+.list-group-heading span {
+  min-width: 34px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(47, 92, 66, 0.08);
+  text-align: center;
+}
+
+.list-group-heading.ready {
+  color: var(--deep-green);
+}
+
+.list-group-heading.ready span {
+  background: rgba(79, 157, 105, 0.16);
+}
+
+.list-group-heading.done {
+  color: #7d8d84;
+}
+
 .mission,
 .upgrade,
 .unlock,
@@ -971,9 +1007,17 @@ body[data-stage="緑の星"] .planet-core {
 .coop-request.done {
   border-color: rgba(121, 167, 200, 0.28);
   background: #f4f8f9;
+  opacity: 0.74;
 }
 
-.mission.done small {
+.mission.done {
+  border-color: rgba(121, 167, 200, 0.28);
+  background: #f4f8f9;
+  opacity: 0.78;
+}
+
+.mission.done small,
+.coop-request.done small {
   color: var(--deep-green);
   font-weight: 900;
 }

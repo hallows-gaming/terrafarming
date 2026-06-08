@@ -1539,32 +1539,51 @@ function renderField() {
   });
 }
 
+function appendListGroup(container, title, items, variant, renderItem) {
+  if (!items.length) return;
+  const heading = document.createElement("div");
+  heading.className = `list-group-heading ${variant}`;
+  heading.innerHTML = `<strong>${title}</strong><span>${items.length}件</span>`;
+  container.appendChild(heading);
+  items.forEach((item) => container.appendChild(renderItem(item)));
+}
+
 function renderMissions() {
   const reported = state.reportedMissions.length;
-  els.missionProgress.textContent = `${reported}/${missions.length}`;
+  const missionStates = missions.map((mission) => ({
+    mission,
+    ready: mission.isReady(state),
+    completed: state.reportedMissions.includes(mission.id)
+  }));
+  const readyMissions = missionStates.filter((item) => item.ready && !item.completed);
+  const activeMissions = missionStates.filter((item) => !item.ready && !item.completed);
+  const completedMissions = missionStates.filter((item) => item.completed);
+  els.missionProgress.textContent = readyMissions.length ? `報告可 ${readyMissions.length}` : `${reported}/${missions.length}`;
   els.bonusSummary.textContent = `成長 +${totalBonus("growth")}% / 売却 +${totalBonus("sale")}% / 交配 +${totalBonus("breeding")}%`;
   els.unlockSummary.textContent = nextUnlockText();
   els.missionList.innerHTML = "";
   els.upgradeList.innerHTML = "";
   els.unlockList.innerHTML = "";
 
-  missions.forEach((mission) => {
-    const ready = mission.isReady(state);
-    const reportedMission = state.reportedMissions.includes(mission.id);
+  const createMissionItem = ({ mission, ready, completed }) => {
     const item = document.createElement("div");
-    item.className = `mission ${reportedMission ? "done" : ready ? "ready" : ""}`;
+    item.className = `mission ${completed ? "done" : ready ? "ready" : ""}`;
     item.innerHTML = `
       <div>
         <strong>${mission.title}</strong>
         <span>${mission.target}</span>
-        <small>${reportedMission ? "報告済み" : mission.reward}</small>
+        <small>${completed ? "報告済み" : `達成報酬: ${mission.reward}`}</small>
       </div>
-      <button class="mini-action" ${ready && !reportedMission ? "" : "disabled"} data-report="${mission.id}">
-        ${reportedMission ? "済" : ready ? "報告" : "未達成"}
+      <button class="mini-action" ${ready && !completed ? "" : "disabled"} data-report="${mission.id}">
+        ${completed ? "済" : ready ? "報告する" : "進行中"}
       </button>
     `;
-    els.missionList.appendChild(item);
-  });
+    return item;
+  };
+
+  appendListGroup(els.missionList, "報告できます", readyMissions, "ready", createMissionItem);
+  appendListGroup(els.missionList, "進行中の目標", activeMissions, "active", createMissionItem);
+  appendListGroup(els.missionList, "報告済み", completedMissions, "done", createMissionItem);
 
   upgrades.forEach((upgrade) => {
     const cost = upgradeCost(upgrade);
@@ -1604,13 +1623,19 @@ function renderMissions() {
 function renderCoopRequests() {
   const visibleRequests = coopRequests.filter(isRequestVisible);
   const completedVisible = visibleRequests.filter((request) => isRequestCompleted(request.id)).length;
-  els.coopSummary.textContent = `${completedVisible}/${visibleRequests.length}`;
+  const requestStates = visibleRequests.map((request) => {
+    const completed = isRequestCompleted(request.id);
+    const eligibleCount = completed ? 0 : eligibleCropsForRequest(request).length;
+    return { request, completed, eligibleCount };
+  });
+  const readyRequests = requestStates.filter((item) => !item.completed && item.eligibleCount);
+  const activeRequests = requestStates.filter((item) => !item.completed && !item.eligibleCount);
+  const completedRequests = requestStates.filter((item) => item.completed);
+  els.coopSummary.textContent = readyRequests.length ? `納品可 ${readyRequests.length}` : `${completedVisible}/${visibleRequests.length}`;
   els.coopRequestList.innerHTML = "";
 
-  visibleRequests.forEach((request) => {
+  const createRequestItem = ({ request, completed, eligibleCount }) => {
     const client = requestClients[request.client];
-    const completed = isRequestCompleted(request.id);
-    const eligibleCount = eligibleCropsForRequest(request).length;
     const item = document.createElement("div");
     item.className = `coop-request ${completed ? "done" : eligibleCount ? "ready" : ""}`;
     item.innerHTML = `
@@ -1625,11 +1650,15 @@ function renderCoopRequests() {
         <small>お礼: ${requestRewardText(request.reward)}</small>
       </div>
       <button class="mini-action" ${!completed && eligibleCount ? "" : "disabled"} data-delivery="${request.id}">
-        ${completed ? "届け済み" : eligibleCount ? `届ける ${eligibleCount}` : "待ち"}
+        ${completed ? "届け済み" : eligibleCount ? `届ける ${eligibleCount}` : "準備中"}
       </button>
     `;
-    els.coopRequestList.appendChild(item);
-  });
+    return item;
+  };
+
+  appendListGroup(els.coopRequestList, "納品できます", readyRequests, "ready", createRequestItem);
+  appendListGroup(els.coopRequestList, "進行中のお願い", activeRequests, "active", createRequestItem);
+  appendListGroup(els.coopRequestList, "達成したお願い", completedRequests, "done", createRequestItem);
 }
 
 function renderDeliveryModal() {
