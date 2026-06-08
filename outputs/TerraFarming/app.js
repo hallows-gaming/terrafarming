@@ -122,6 +122,7 @@ const planetCatalog = {
     ],
     cropFamilies: ["carrot", "tomato", "beans"],
     terraformTargets: { oxygen: 500, water: 500, nitrogen: 500 },
+    constructionMultiplier: 1,
     nextPlanet: "frontier",
     desc: "最初に任された小さな開拓星"
   },
@@ -138,6 +139,7 @@ const planetCatalog = {
     ],
     cropFamilies: ["rice", "potato", "pepper"],
     terraformTargets: { oxygen: 2500, water: 3500, nitrogen: 1500 },
+    constructionMultiplier: 2.5,
     desc: "広い畑を持つ、開拓に時間のかかる新しい星"
   }
 };
@@ -207,29 +209,29 @@ const missions = [
 const upgrades = [
   {
     id: "greenhouse",
-    title: "温室ヒーター",
-    desc: "作物の成長時間を短くする",
+    title: "温室拡張工事",
+    desc: "この星の畑に温室設備を増設し、作物の成長時間を短くする",
     bonusKey: "growth",
     bonusPerLevel: 6,
-    baseCost: 24,
+    baseCost: 100,
     label: "成長速度"
   },
   {
     id: "shipping",
-    title: "出荷箱",
-    desc: "野菜を売ったときのコインを増やす",
+    title: "出荷所整備",
+    desc: "この星の出荷所を整え、野菜を売ったときのコインを増やす",
     bonusKey: "sale",
     bonusPerLevel: 8,
-    baseCost: 30,
+    baseCost: 130,
     label: "売却価格"
   },
   {
     id: "geneMemo",
-    title: "交配マシン",
-    desc: "交配が成功する確率を上げる",
+    title: "交配マシン改修",
+    desc: "この星の交配マシンを調整し、交配が成功する確率を上げる",
     bonusKey: "breeding",
     bonusPerLevel: 10,
-    baseCost: 36,
+    baseCost: 160,
     label: "交配成功率"
   }
 ];
@@ -627,6 +629,7 @@ function createPlanetState(planetId, customName) {
     seedBank,
     seedLicenses: [firstFamily],
     seed: structuredClone(seedBank[firstFamily]),
+    upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0 },
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0 },
     reportedMissions: []
   };
@@ -636,6 +639,7 @@ function normalizePlanetState(planetId, planet = {}) {
   const def = planetCatalog[planetId] ?? planetCatalog.home;
   const base = createPlanetState(planetId, planet.name);
   const seedBank = { ...base.seedBank, ...planet.seedBank };
+  const upgradeLevels = { ...base.upgradeLevels, ...planet.upgradeLevels };
   const fallbackLicenses = planet.seedLicenses ?? Object.keys(planet.seedBank ?? {});
   const seedLicenseSet = new Set([base.selectedFamily, ...fallbackLicenses].filter((family) => def.cropFamilies.includes(family)));
   const seedLicenseList = [...seedLicenseSet];
@@ -649,6 +653,7 @@ function normalizePlanetState(planetId, planet = {}) {
     seedBank,
     seedLicenses: seedLicenseList,
     seed: seedBank[selectedFamily] ?? planet.seed ?? base.seed,
+    upgradeLevels,
     environment: { ...base.environment, ...planet.environment },
     reportedMissions: planet.reportedMissions ?? []
   };
@@ -673,6 +678,7 @@ function syncRootToActivePlanet(target = state) {
   planet.seedBank = target.seedBank;
   planet.seedLicenses = target.seedLicenses;
   planet.seed = target.seed;
+  planet.upgradeLevels = target.upgradeLevels;
   planet.environment = target.environment;
   planet.reportedMissions = target.reportedMissions;
 }
@@ -686,6 +692,7 @@ function syncActivePlanetToRoot(target = state) {
   target.seedBank = planet.seedBank;
   target.seedLicenses = planet.seedLicenses;
   target.seed = planet.seed;
+  target.upgradeLevels = planet.upgradeLevels;
   target.environment = planet.environment;
   target.reportedMissions = planet.reportedMissions;
 }
@@ -763,6 +770,7 @@ function normalizeState(raw) {
       seedBank: normalized.seedBank,
       seedLicenses: normalized.seedLicenses,
       seed: normalized.seed,
+      upgradeLevels: normalized.upgradeLevels,
       environment: normalized.environment,
       reportedMissions: normalized.reportedMissions
     };
@@ -777,12 +785,17 @@ function normalizeState(raw) {
     normalized.activePlanetId = HOME_PLANET_ID;
   }
   syncActivePlanetToRoot(normalized);
+  const legacyUpgradeLevels = raw.upgradeLevels && !raw.planets?.[normalized.activePlanetId]?.upgradeLevels ? raw.upgradeLevels : null;
   const legacyRootLicenses = raw.seedLicenses ?? (Object.keys(raw.seedBank ?? {}).length ? Object.keys(raw.seedBank) : null);
   if (!hasPlanetData && legacyRootLicenses) {
     const def = planetCatalog[normalized.activePlanetId] ?? planetCatalog.home;
     normalized.seedLicenses = legacyRootLicenses.filter((family) => def.cropFamilies.includes(family));
     normalized.planets[normalized.activePlanetId].seedLicenses = normalized.seedLicenses;
   }
+  if (legacyUpgradeLevels) {
+    normalized.planets[normalized.activePlanetId].upgradeLevels = { greenhouse: 0, shipping: 0, geneMemo: 0, ...legacyUpgradeLevels };
+  }
+  normalized.bonuses = subtractLegacyUpgradeBonuses(normalized.bonuses, legacyUpgradeLevels);
   normalized.seedBank = Object.fromEntries(Object.entries(normalized.seedBank).map(([family, seed]) => [family, decorateSeed(seed)]));
   normalized.seedLicenses = normalized.seedLicenses?.filter((family) => normalized.seedBank[family]) ?? [normalized.selectedFamily];
   if (!normalized.seedLicenses.includes(normalized.selectedFamily)) {
@@ -838,6 +851,18 @@ function createBaseSeed(family) {
     environmentYield: structuredClone(crop.environmentYield),
     stats: structuredClone(crop.stats)
   };
+}
+
+function subtractLegacyUpgradeBonuses(bonuses, legacyLevels) {
+  if (!legacyLevels) return bonuses;
+  const next = { ...bonuses };
+  upgrades.forEach((upgrade) => {
+    const level = legacyLevels[upgrade.id] ?? 0;
+    if (level > 0) {
+      next[upgrade.bonusKey] = Math.max(0, (next[upgrade.bonusKey] ?? 0) - level * upgrade.bonusPerLevel);
+    }
+  });
+  return next;
 }
 
 function hasSeedLicense(family) {
@@ -1238,9 +1263,16 @@ function reportMission(missionId) {
   saveAndRender();
 }
 
+function planetUpgradeBonus(key) {
+  return upgrades
+    .filter((upgrade) => upgrade.bonusKey === key)
+    .reduce((sum, upgrade) => sum + (state.upgradeLevels[upgrade.id] ?? 0) * upgrade.bonusPerLevel, 0);
+}
+
 function upgradeCost(upgrade) {
   const level = state.upgradeLevels[upgrade.id] ?? 0;
-  return Math.round(upgrade.baseCost * (1 + level * 0.75));
+  const multiplier = currentPlanetDef().constructionMultiplier ?? 1;
+  return Math.round(upgrade.baseCost * multiplier * (1 + level * 0.75));
 }
 
 function buyUpgrade(upgradeId) {
@@ -1255,9 +1287,8 @@ function buyUpgrade(upgradeId) {
 
   state.resources.coins -= cost;
   state.upgradeLevels[upgrade.id] += 1;
-  state.bonuses[upgrade.bonusKey] += upgrade.bonusPerLevel;
   playRewardSound();
-  setLog(`${upgrade.title}を強化しました。${upgrade.label} +${upgrade.bonusPerLevel}%`);
+  setLog(`ノノ工務店に${upgrade.title}を依頼しました。${upgrade.label} +${upgrade.bonusPerLevel}%`);
   saveAndRender();
 }
 
@@ -1401,7 +1432,7 @@ function stageBonus(key) {
 }
 
 function totalBonus(key) {
-  return state.bonuses[key] + stageBonus(key);
+  return (state.bonuses[key] ?? 0) + planetUpgradeBonus(key) + stageBonus(key);
 }
 
 function nextUnlockText() {
@@ -1676,16 +1707,17 @@ function renderMissions() {
   upgrades.forEach((upgrade) => {
     const cost = upgradeCost(upgrade);
     const level = state.upgradeLevels[upgrade.id] ?? 0;
+    const localBonus = level * upgrade.bonusPerLevel;
     const item = document.createElement("div");
     item.className = "upgrade";
     item.innerHTML = `
       <div>
         <strong>${upgrade.title} Lv.${level}</strong>
         <span>${upgrade.desc}</span>
-        <small>${upgrade.label} +${state.bonuses[upgrade.bonusKey]}% / 段階 +${stageBonus(upgrade.bonusKey)}%</small>
+        <small>現地工事 +${localBonus}% / 開拓段階 +${stageBonus(upgrade.bonusKey)}%</small>
       </div>
       <button class="mini-action" ${state.resources.coins >= cost ? "" : "disabled"} data-upgrade="${upgrade.id}">
-        ${cost}C
+        見積 ${cost}C
       </button>
     `;
     els.upgradeList.appendChild(item);
@@ -1694,8 +1726,8 @@ function renderMissions() {
   [
     `開拓証: ${state.profile.playerName} / ${currentPlanet().name}`,
     `${state.unlockedPlots}/${currentPlanetDef().maxPlots}区画の畑を利用可能`,
-    `成長速度 +${totalBonus("growth")}%`,
-    `売却価格 +${totalBonus("sale")}%`,
+    `現地工事: 成長 +${planetUpgradeBonus("growth")}% / 売却 +${planetUpgradeBonus("sale")}% / 交配 +${planetUpgradeBonus("breeding")}%`,
+    `総合ボーナス: 成長 +${totalBonus("growth")}% / 売却 +${totalBonus("sale")}%`,
     `交配成功率 ${Math.round(breedingSuccessRate() * 100)}%`,
     `次段階: ${nextStageRequirement()}`,
     ...nextStageShortfalls(),
