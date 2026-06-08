@@ -479,14 +479,14 @@ body[data-stage="緑の星"] .planet-core {
 .field-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .plot {
   position: relative;
   display: grid;
-  min-height: 128px;
-  padding: 9px;
+  min-height: 112px;
+  padding: 8px;
   overflow: hidden;
   border: 1px solid #c9b58f;
   border-radius: 15px;
@@ -718,6 +718,26 @@ body[data-stage="緑の星"] .planet-core {
   margin-bottom: 2px;
 }
 
+.seed-silhouette {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 2px;
+  border-radius: 50% 50% 44% 44%;
+  background: linear-gradient(180deg, #aeb8b0, #7e897f);
+  box-shadow: inset -8px -8px 0 rgba(54, 64, 56, 0.18);
+}
+
+.seed-silhouette::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 16px;
+  margin: -6px auto 0;
+  border-radius: 50% 50% 0 50%;
+  background: #879580;
+  transform: rotate(-10deg);
+}
+
 .seed-card .crop-icon::before {
   width: 20px;
   height: 12px;
@@ -800,6 +820,7 @@ body[data-stage="緑の星"] .planet-core {
 .mission,
 .upgrade,
 .unlock,
+.planet-route,
 .coop-request,
 .item {
   border: 1px solid var(--line);
@@ -809,6 +830,7 @@ body[data-stage="緑の星"] .planet-core {
 
 .mission,
 .upgrade,
+.planet-route,
 .coop-request,
 .item {
   display: grid;
@@ -836,6 +858,37 @@ body[data-stage="緑の星"] .planet-core {
 .request-main {
   display: grid;
   gap: 6px;
+}
+
+.planet-list {
+  display: grid;
+  gap: 9px;
+}
+
+.planet-route.active {
+  border-color: rgba(79, 157, 105, 0.32);
+  background: #eef8ee;
+}
+
+.planet-route.locked {
+  background: #f2f3ef;
+}
+
+.planet-route div {
+  display: grid;
+  gap: 4px;
+}
+
+.planet-route strong {
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+
+.planet-route span,
+.planet-route small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
 }
 
 .request-kicker {

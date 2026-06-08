@@ -1,6 +1,6 @@
 const STORAGE_KEY = "terrafarming-save-v4";
 const GROWTH_MS = 45 * 1000;
-const MAX_PLOTS = 9;
+const HOME_PLANET_ID = "home";
 const SOUND_VOLUME = 2.6;
 
 const statLabels = {
@@ -41,10 +41,68 @@ const cropCatalog = {
     visual: "rarity",
     stats: { size: 4, sweetness: 4, aroma: 3, vitality: 6, rarity: 2 },
     environmentYield: { oxygen: 2, water: 2, nitrogen: 6 }
+  },
+  rice: {
+    no: 4,
+    name: "コメットライス",
+    desc: "遠い星で育つ、空気をゆっくり増やす穀物",
+    flavor: "尾を引く彗星みたいに、畑に白い穂を並べる宇宙米。",
+    visual: "vitality",
+    stats: { size: 4, sweetness: 5, aroma: 6, vitality: 8, rarity: 2 },
+    environmentYield: { oxygen: 6, water: 3, nitrogen: 2 }
+  },
+  potato: {
+    no: 5,
+    name: "クリスタポテト",
+    desc: "大きな星の土から見つかる結晶いも",
+    flavor: "土の中でこっそり光る、腹もちのいい開拓者向けポテト。",
+    visual: "size",
+    stats: { size: 8, sweetness: 4, aroma: 3, vitality: 5, rarity: 2 },
+    environmentYield: { oxygen: 3, water: 4, nitrogen: 5 }
+  },
+  pepper: {
+    no: 6,
+    name: "ネビュラペッパー",
+    desc: "窒素を増やしやすい、刺激的な新星野菜",
+    flavor: "ひとかじりで目が覚める。市場係が箱買いしたがる香辛野菜。",
+    visual: "rarity",
+    stats: { size: 3, sweetness: 3, aroma: 8, vitality: 6, rarity: 3 },
+    environmentYield: { oxygen: 2, water: 3, nitrogen: 8 }
   }
 };
 
-const cropDexOrder = ["carrot", "tomato", "beans"];
+const cropDexOrder = ["carrot", "tomato", "beans", "rice", "potato", "pepper"];
+const planetCatalog = {
+  home: {
+    id: "home",
+    fallbackName: "はじまりの小惑星",
+    maxPlots: 9,
+    initialPlots: 4,
+    unlocks: [
+      { green: 20, plots: 6 },
+      { green: 50, plots: 9 }
+    ],
+    cropFamilies: ["carrot", "tomato", "beans"],
+    greenScale: 1,
+    nextPlanet: "frontier",
+    desc: "最初に任された小さな開拓星"
+  },
+  frontier: {
+    id: "frontier",
+    fallbackName: "外縁ファーム星",
+    maxPlots: 25,
+    initialPlots: 3,
+    unlocks: [
+      { green: 15, plots: 6 },
+      { green: 30, plots: 9 },
+      { green: 60, plots: 18 },
+      { green: 100, plots: 25 }
+    ],
+    cropFamilies: ["rice", "potato", "pepper"],
+    greenScale: 0.36,
+    desc: "広い畑を持つ、開拓に時間のかかる新しい星"
+  }
+};
 const baseSeed = createBaseSeed("carrot");
 
 const stageRules = [
@@ -103,7 +161,7 @@ const missions = [
     reward: "畑が9区画まで解放",
     isReady: (s) => stageRank(terraStageName(s.environment)) >= stageRank("草原"),
     apply: (s) => {
-      s.unlockedPlots = MAX_PLOTS;
+      s.unlockedPlots = Math.max(s.unlockedPlots, Math.min(9, currentPlanetDef().maxPlots));
     }
   }
 ];
@@ -337,6 +395,7 @@ let pendingSellId = null;
 let activeDeliveryId = null;
 let activeParentSlot = null;
 let pendingDiscoveryName = null;
+let pendingPlanetUnlockName = null;
 let bgmTimer = null;
 let bgmMode = null;
 let introIndex = 0;
@@ -368,6 +427,8 @@ const els = {
   harvestAllBtn: document.querySelector("#harvestAllBtn"),
   missionProgress: document.querySelector("#missionProgress"),
   missionList: document.querySelector("#missionList"),
+  planetSummary: document.querySelector("#planetSummary"),
+  planetList: document.querySelector("#planetList"),
   coopSummary: document.querySelector("#coopSummary"),
   coopRequestList: document.querySelector("#coopRequestList"),
   bonusSummary: document.querySelector("#bonusSummary"),
@@ -452,6 +513,9 @@ function completeIntro() {
   const playerName = els.playerNameInput.value.trim() || "開拓者";
   const planetName = els.planetNameInput.value.trim() || "テラファーム星";
   state.profile = { playerName, planetName, introSeen: true };
+  if (state.planets[HOME_PLANET_ID]) {
+    state.planets[HOME_PLANET_ID].name = planetName;
+  }
   saveState();
   playRewardSound();
   setLog(`はい、${playerName}さんですね。これから${planetName}の開拓をよろしくお願いします。良き宇宙ライフを。`);
@@ -470,8 +534,8 @@ function loadState() {
   }
 
   return normalizeState({
-    plots: Array.from({ length: MAX_PLOTS }, (_, id) => ({ id, crop: null })),
-    unlockedPlots: 4,
+    plots: Array.from({ length: planetCatalog.home.maxPlots }, (_, id) => ({ id, crop: null })),
+    unlockedPlots: planetCatalog.home.initialPlots,
     selectedFamily: "carrot",
     seedBank: {
       carrot: createBaseSeed("carrot"),
@@ -487,14 +551,102 @@ function loadState() {
     discoveredCrops: {},
     reportedMissions: [],
     completedRequests: [],
+    activePlanetId: HOME_PLANET_ID,
+    unlockedPlanets: [HOME_PLANET_ID],
+    plantedCrops: {},
+    planets: {},
     bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0 },
     upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0 },
     lastSeen: Date.now()
   });
 }
 
+function createPlanetState(planetId, customName) {
+  const def = planetCatalog[planetId] ?? planetCatalog.home;
+  const firstFamily = def.cropFamilies[0];
+  const seedBank = Object.fromEntries(def.cropFamilies.map((family) => [family, createBaseSeed(family)]));
+  return {
+    id: planetId,
+    name: customName || def.fallbackName,
+    plots: Array.from({ length: def.maxPlots }, (_, id) => ({ id, crop: null })),
+    unlockedPlots: def.initialPlots,
+    selectedFamily: firstFamily,
+    seedBank,
+    seed: structuredClone(seedBank[firstFamily]),
+    environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0 },
+    reportedMissions: []
+  };
+}
+
+function normalizePlanetState(planetId, planet = {}) {
+  const def = planetCatalog[planetId] ?? planetCatalog.home;
+  const base = createPlanetState(planetId, planet.name);
+  const seedBank = { ...base.seedBank, ...planet.seedBank };
+  const selectedFamily = seedBank[planet.selectedFamily] ? planet.selectedFamily : base.selectedFamily;
+  return {
+    ...base,
+    ...planet,
+    plots: Array.from({ length: def.maxPlots }, (_, id) => planet.plots?.[id] ?? { id, crop: null }),
+    unlockedPlots: Math.min(def.maxPlots, Math.max(def.initialPlots, planet.unlockedPlots ?? base.unlockedPlots)),
+    selectedFamily,
+    seedBank,
+    seed: planet.seed ?? seedBank[selectedFamily],
+    environment: { ...base.environment, ...planet.environment },
+    reportedMissions: planet.reportedMissions ?? []
+  };
+}
+
+function currentPlanetDef() {
+  return planetCatalog[state?.activePlanetId] ?? planetCatalog.home;
+}
+
+function currentPlanet() {
+  return state.planets[state.activePlanetId];
+}
+
+function syncRootToActivePlanet(target = state) {
+  const planet = target.planets[target.activePlanetId];
+  if (!planet) return;
+  planet.plots = target.plots;
+  planet.unlockedPlots = target.unlockedPlots;
+  planet.selectedFamily = target.selectedFamily;
+  planet.seedBank = target.seedBank;
+  planet.seed = target.seed;
+  planet.environment = target.environment;
+  planet.reportedMissions = target.reportedMissions;
+}
+
+function syncActivePlanetToRoot(target = state) {
+  const planet = target.planets[target.activePlanetId] ?? createPlanetState(target.activePlanetId);
+  target.planets[target.activePlanetId] = planet;
+  target.plots = planet.plots;
+  target.unlockedPlots = planet.unlockedPlots;
+  target.selectedFamily = planet.selectedFamily;
+  target.seedBank = planet.seedBank;
+  target.seed = planet.seed;
+  target.environment = planet.environment;
+  target.reportedMissions = planet.reportedMissions;
+}
+
+function switchPlanet(planetId) {
+  if (!state.unlockedPlanets.includes(planetId) || planetId === state.activePlanetId) return;
+  syncRootToActivePlanet();
+  state.activePlanetId = planetId;
+  state.planets[planetId] = normalizePlanetState(planetId, state.planets[planetId]);
+  syncActivePlanetToRoot();
+  state.seedBank = Object.fromEntries(Object.entries(state.seedBank).map(([family, seed]) => [family, decorateSeed(seed)]));
+  state.seed = decorateSeed(state.seedBank[state.selectedFamily] ?? state.seed);
+  state.plots = state.plots.map((plot, id) => ({ id, crop: plot.crop ? decorateCrop(plot.crop) : null }));
+  selectedParentA = null;
+  selectedParentB = null;
+  activeParentSlot = null;
+  setLog(`${currentPlanet().name}へ移動しました。`);
+  saveAndRender();
+}
+
 function normalizeState(raw) {
   const coins = raw.resources?.coins ?? raw.resources?.minerals ?? 0;
+  const hasPlanetData = Boolean(raw.planets && Object.keys(raw.planets).length);
   const hasProgress = Boolean(
     raw.profile?.introSeen ||
       raw.stats?.totalHarvested ||
@@ -508,9 +660,13 @@ function normalizeState(raw) {
       raw.resources?.terraPoints ||
       raw.storage?.length
   );
+  const activePlanetId = raw.activePlanetId ?? HOME_PLANET_ID;
   const normalized = {
-    plots: Array.from({ length: MAX_PLOTS }, (_, id) => raw.plots?.[id] ?? { id, crop: null }),
-    unlockedPlots: raw.unlockedPlots ?? 4,
+    activePlanetId,
+    unlockedPlanets: raw.unlockedPlanets ?? [HOME_PLANET_ID],
+    planets: raw.planets ?? {},
+    plots: Array.from({ length: planetCatalog.home.maxPlots }, (_, id) => raw.plots?.[id] ?? { id, crop: null }),
+    unlockedPlots: raw.unlockedPlots ?? planetCatalog.home.initialPlots,
     selectedFamily: raw.selectedFamily ?? raw.seed?.family ?? "carrot",
     seedBank: { carrot: createBaseSeed("carrot"), tomato: createBaseSeed("tomato"), beans: createBaseSeed("beans"), ...raw.seedBank },
     seed: raw.seed ?? structuredClone(baseSeed),
@@ -524,6 +680,7 @@ function normalizeState(raw) {
       introSeen: raw.profile?.introSeen ?? hasProgress
     },
     discoveredCrops: raw.discoveredCrops ?? {},
+    plantedCrops: raw.plantedCrops ?? {},
     reportedMissions: raw.reportedMissions ?? raw.completedMissions ?? [],
     completedRequests: raw.completedRequests ?? [],
     bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0, ...raw.bonuses },
@@ -533,6 +690,31 @@ function normalizeState(raw) {
 
   delete normalized.resources.minerals;
   delete normalized.environment.soil;
+  if (!hasPlanetData) {
+    normalized.planets[HOME_PLANET_ID] = {
+      ...createPlanetState(HOME_PLANET_ID, normalized.profile.planetName),
+      plots: normalized.plots,
+      unlockedPlots: normalized.unlockedPlots,
+      selectedFamily: normalized.selectedFamily,
+      seedBank: normalized.seedBank,
+      seed: normalized.seed,
+      environment: normalized.environment,
+      reportedMissions: normalized.reportedMissions
+    };
+  }
+  Object.keys(planetCatalog).forEach((planetId) => {
+    normalized.planets[planetId] = normalizePlanetState(planetId, normalized.planets[planetId]);
+  });
+  if (!normalized.unlockedPlanets.includes(HOME_PLANET_ID)) {
+    normalized.unlockedPlanets.unshift(HOME_PLANET_ID);
+  }
+  if (normalized.planets[HOME_PLANET_ID].environment.green >= 100 && !normalized.unlockedPlanets.includes("frontier")) {
+    normalized.unlockedPlanets.push("frontier");
+  }
+  if (!normalized.unlockedPlanets.includes(normalized.activePlanetId)) {
+    normalized.activePlanetId = HOME_PLANET_ID;
+  }
+  syncActivePlanetToRoot(normalized);
   normalized.seedBank = Object.fromEntries(Object.entries(normalized.seedBank).map(([family, seed]) => [family, decorateSeed(seed)]));
   normalized.seed = decorateSeed(normalized.seedBank[normalized.selectedFamily] ?? normalized.seed);
   normalized.storage = normalized.storage.map((crop) => decorateCrop(crop));
@@ -588,11 +770,16 @@ function createBaseSeed(family) {
 
 function cropImage(cropOrFamily) {
   const family = typeof cropOrFamily === "string" ? cropOrFamily : cropOrFamily?.family;
-  return cropCatalog[family]?.image ?? cropCatalog.carrot.image;
+  return cropCatalog[family]?.image ?? null;
 }
 
 function cropImageMarkup(cropOrFamily, className = "crop-art", alt = "") {
-  return `<img class="${className}" src="${cropImage(cropOrFamily)}" alt="${alt}" loading="lazy" draggable="false" />`;
+  const image = cropImage(cropOrFamily);
+  if (image) {
+    return `<img class="${className}" src="${image}" alt="${alt}" loading="lazy" draggable="false" />`;
+  }
+  const visual = typeof cropOrFamily === "string" ? cropCatalog[cropOrFamily]?.visual : cropOrFamily?.visual;
+  return `<div class="crop-icon crop-${visual ?? "vitality"} ${className}"></div>`;
 }
 
 function formatDiscoveryDate(timestamp) {
@@ -611,7 +798,23 @@ function registerCropDiscovery(crop) {
   pendingDiscoveryName = cropCatalog[family].name;
 }
 
+function updatePlanetUnlocks() {
+  const def = currentPlanetDef();
+  def.unlocks.forEach((unlock) => {
+    if (state.environment.green >= unlock.green) {
+      state.unlockedPlots = Math.max(state.unlockedPlots, unlock.plots);
+    }
+  });
+
+  if (state.activePlanetId === HOME_PLANET_ID && state.environment.green >= 100 && def.nextPlanet && !state.unlockedPlanets.includes(def.nextPlanet)) {
+    state.unlockedPlanets.push(def.nextPlanet);
+    state.planets[def.nextPlanet] = normalizePlanetState(def.nextPlanet, state.planets[def.nextPlanet]);
+    pendingPlanetUnlockName = planetCatalog[def.nextPlanet].fallbackName;
+  }
+}
+
 function saveState() {
+  syncRootToActivePlanet();
   state.lastSeen = Date.now();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -650,6 +853,7 @@ function plant(plotId) {
   if (!plot || plot.crop || plot.id >= state.unlockedPlots) return;
 
   plot.crop = createCropFromSeed();
+  state.plantedCrops[state.seed.family] = true;
   playPlantSound();
   setLog(`${plot.id + 1}番の畑に${state.seed.name}を植えました。`);
   saveAndRender();
@@ -669,6 +873,7 @@ function plantAll() {
   state.plots.forEach((plot) => {
     if (!plot.crop && plot.id < state.unlockedPlots) {
       plot.crop = createCropFromSeed();
+      state.plantedCrops[state.seed.family] = true;
       count += 1;
     }
   });
@@ -692,9 +897,10 @@ function harvest(plotId) {
   state.environment.oxygen += Math.ceil(crop.environmentYield.oxygen + crop.stats.vitality * 0.25);
   state.environment.water += Math.ceil(crop.environmentYield.water + crop.stats.aroma * 0.18);
   state.environment.nitrogen += Math.ceil(crop.environmentYield.nitrogen + crop.stats.rarity * 0.3);
-  state.environment.green = Math.min(100, Math.floor((state.environment.oxygen + state.environment.water + state.environment.nitrogen) / 3));
+  state.environment.green = Math.min(100, Math.floor(((state.environment.oxygen + state.environment.water + state.environment.nitrogen) / 3) * currentPlanetDef().greenScale));
   state.stats.totalHarvested += 1;
   registerCropDiscovery(crop);
+  updatePlanetUnlocks();
   plot.crop = null;
   return true;
 }
@@ -705,8 +911,10 @@ function harvestAll() {
     playHarvestSound();
   }
   const discoveryText = pendingDiscoveryName ? ` 図鑑に${pendingDiscoveryName}を登録しました。` : "";
-  setLog(count ? `${count}個の作物を収穫しました。倉庫から売るとコインになります。${discoveryText}` : "収穫できる作物はまだありません。");
+  const routeText = pendingPlanetUnlockName ? ` ${pendingPlanetUnlockName}への航路が開きました。` : "";
+  setLog(count ? `${count}個の作物を収穫しました。倉庫から売るとコインになります。${discoveryText}${routeText}` : "収穫できる作物はまだありません。");
   pendingDiscoveryName = null;
+  pendingPlanetUnlockName = null;
   clearInvalidParents();
   saveAndRender();
 }
@@ -1023,6 +1231,7 @@ function render() {
   renderStats();
   renderSeedPicker();
   renderField();
+  renderPlanets();
   renderMissions();
   renderCoopRequests();
   renderStorage();
@@ -1038,7 +1247,7 @@ function renderStats() {
     els.greenBar.style.width = `${Math.min(100, Math.floor(state.environment.green))}%`;
   }
   if (els.profileLabel) {
-    els.profileLabel.textContent = `${state.profile.playerName} / ${state.profile.planetName}`;
+    els.profileLabel.textContent = `${state.profile.playerName} / ${currentPlanet().name}`;
   }
   els.oxygen.textContent = state.environment.oxygen;
   els.water.textContent = state.environment.water;
@@ -1050,19 +1259,43 @@ function renderStats() {
   document.body.dataset.stage = terraStageName();
 }
 
+function renderPlanets() {
+  els.planetSummary.textContent = `${state.unlockedPlanets.length}/${Object.keys(planetCatalog).length}`;
+  els.planetList.innerHTML = "";
+
+  Object.values(planetCatalog).forEach((def) => {
+    const unlocked = state.unlockedPlanets.includes(def.id);
+    const planet = state.planets[def.id] ?? createPlanetState(def.id, def.id === HOME_PLANET_ID ? state.profile.planetName : def.fallbackName);
+    const item = document.createElement("div");
+    item.className = `planet-route ${state.activePlanetId === def.id ? "active" : ""}${unlocked ? "" : " locked"}`;
+    item.innerHTML = `
+      <div>
+        <strong>${planet.name}</strong>
+        <span>${def.desc}</span>
+        <small>緑化率 ${Math.floor(planet.environment.green)}% / 畑 ${planet.unlockedPlots}/${def.maxPlots}</small>
+      </div>
+      <button class="mini-action" ${unlocked && state.activePlanetId !== def.id ? "" : "disabled"} data-planet="${def.id}">
+        ${state.activePlanetId === def.id ? "滞在中" : unlocked ? "移動" : "未開通"}
+      </button>
+    `;
+    els.planetList.appendChild(item);
+  });
+}
+
 function renderSeedPicker() {
   els.selectedSeedLabel.textContent = state.seed.name;
   els.seedPicker.innerHTML = "";
   Object.entries(state.seedBank).forEach(([family, seed]) => {
     const button = document.createElement("button");
     const selected = family === state.selectedFamily;
+    const planted = Boolean(state.plantedCrops[family]);
     button.className = `seed-card ${selected ? "selected" : ""}`;
     button.type = "button";
     button.innerHTML = `
-      ${cropImageMarkup(family, "crop-art seed-art", seed.name)}
+      ${planted ? cropImageMarkup(family, "crop-art seed-art", seed.name) : `<div class="seed-silhouette"></div>`}
       <strong>${seed.name}</strong>
       <span>${cropCatalog[family]?.desc ?? "交配で生まれた種"}</span>
-      <small>酸${seed.environmentYield.oxygen} / 水${seed.environmentYield.water} / 窒${seed.environmentYield.nitrogen}</small>
+      <small>${planted ? `酸${seed.environmentYield.oxygen} / 水${seed.environmentYield.water} / 窒${seed.environmentYield.nitrogen}` : "植えると姿がわかります"}</small>
     `;
     button.addEventListener("click", () => selectSeed(family));
     els.seedPicker.appendChild(button);
@@ -1077,7 +1310,7 @@ function renderField() {
 
     if (plot.id >= state.unlockedPlots) {
       button.className = "plot locked";
-      button.innerHTML = `<span>未開拓</span><small>開拓報告で解放</small>`;
+      button.innerHTML = `<span>未開拓</span><small>緑化で解放</small>`;
       els.fieldGrid.appendChild(button);
       return;
     }
@@ -1101,8 +1334,10 @@ function renderField() {
           harvest(plot.id);
           playHarvestSound();
           const discoveryText = pendingDiscoveryName ? ` 図鑑に${pendingDiscoveryName}を登録しました。` : "";
-          setLog(`${cropName}をすぽっと収穫しました。${discoveryText}`);
+          const routeText = pendingPlanetUnlockName ? ` ${pendingPlanetUnlockName}への航路が開きました。` : "";
+          setLog(`${cropName}をすぽっと収穫しました。${discoveryText}${routeText}`);
           pendingDiscoveryName = null;
+          pendingPlanetUnlockName = null;
           clearInvalidParents();
           saveAndRender();
         } else {
@@ -1160,8 +1395,8 @@ function renderMissions() {
   });
 
   [
-    `開拓証: ${state.profile.playerName} / ${state.profile.planetName}`,
-    `${state.unlockedPlots}/9区画の畑を利用可能`,
+    `開拓証: ${state.profile.playerName} / ${currentPlanet().name}`,
+    `${state.unlockedPlots}/${currentPlanetDef().maxPlots}区画の畑を利用可能`,
     `成長速度 +${totalBonus("growth")}%`,
     `売却価格 +${totalBonus("sale")}%`,
     `交配成功率 ${Math.round(breedingSuccessRate() * 100)}%`,
@@ -1567,6 +1802,13 @@ els.missionList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-report]");
   if (button) {
     reportMission(button.dataset.report);
+  }
+});
+
+els.planetList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-planet]");
+  if (button) {
+    switchPlanet(button.dataset.planet);
   }
 });
 
