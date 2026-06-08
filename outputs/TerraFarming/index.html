@@ -88,64 +88,89 @@
             </div>
             <div id="fieldGrid" class="field-grid"></div>
             <button id="harvestAllBtn" class="primary wide">収穫できる作物を集める</button>
-          </section>
-
-          <section id="seedPanel" class="panel management-panel" aria-label="種">
-            <div class="section-head">
-              <h2>種トレイ</h2>
-              <span>栽培候補</span>
+            <div class="field-seed-tray">
+              <div class="section-head compact">
+                <h2>種トレイ</h2>
+                <span>栽培候補</span>
+              </div>
+              <div id="seedPicker" class="seed-picker"></div>
             </div>
-            <div id="seedPicker" class="seed-picker"></div>
           </section>
 
-          <section id="storagePanel" class="panel management-panel" aria-label="倉庫">
+          <section id="cropPanel" class="panel management-panel" aria-label="作物">
             <div class="section-head">
-              <h2>収穫した野菜</h2>
+              <h2>作物</h2>
+              <span>倉庫と図鑑</span>
+            </div>
+            <div class="section-head compact">
+              <h2>倉庫</h2>
               <span id="storageCount">0個</span>
             </div>
             <button id="sellAllBtn" class="secondary wide">すべて売る</button>
             <div id="storageList" class="list empty"></div>
-          </section>
-
-          <section id="dexPanel" class="panel management-panel" aria-label="作物図鑑">
-            <div class="section-head">
+            <div class="section-head compact unlock-head">
               <h2>作物図鑑</h2>
               <span id="dexCount">0/3</span>
             </div>
             <div id="dexList" class="dex-list"></div>
           </section>
 
-          <section id="missionsPanel" class="panel management-panel" aria-label="開拓">
+          <section id="townPanel" class="panel management-panel" aria-label="街">
+            <div class="section-head">
+              <h2>街</h2>
+              <span>暮らしと依頼</span>
+            </div>
+            <div class="town-facilities">
+              <div class="facility-card">
+                <strong>宇宙農協</strong>
+                <span>お願い、納品、種苗ライセンス</span>
+              </div>
+              <div class="facility-card">
+                <strong>ノノ工務店</strong>
+                <span>設備工事と見積もり</span>
+              </div>
+              <div class="facility-card muted">
+                <strong>品評会場</strong>
+                <span>今週の品評会は準備中</span>
+              </div>
+              <div class="facility-card muted">
+                <strong>StarFeed</strong>
+                <span>街の投稿は準備中</span>
+              </div>
+            </div>
+            <div class="section-head compact unlock-head">
+              <h2>宇宙農協だより</h2>
+              <span id="coopSummary">お願い</span>
+            </div>
+            <div id="coopRequestList" class="request-list"></div>
+            <div class="section-head compact unlock-head">
+              <h2>ノノ工務店</h2>
+              <span id="bonusSummary">ボーナス</span>
+            </div>
+            <div id="upgradeList" class="upgrade-list"></div>
+          </section>
+
+          <section id="routePanel" class="panel management-panel" aria-label="航路">
             <div class="section-head">
               <h2>惑星航路</h2>
               <span id="planetSummary">1星</span>
             </div>
             <div id="planetList" class="planet-list"></div>
-            <div class="section-head unlock-head">
-              <h2>開拓ミッション</h2>
+            <div class="section-head compact unlock-head">
+              <h2>開拓目標</h2>
               <span id="missionProgress">0/0</span>
             </div>
             <div id="missionList" class="mission-list"></div>
-            <div class="section-head unlock-head">
-              <h2>宇宙農協だより</h2>
-              <span id="coopSummary">お願い</span>
-            </div>
-            <div id="coopRequestList" class="request-list"></div>
-            <div class="section-head unlock-head">
-              <h2>設備アップグレード</h2>
-              <span id="bonusSummary">ボーナス</span>
-            </div>
-            <div id="upgradeList" class="upgrade-list"></div>
-            <div class="section-head unlock-head">
+            <div class="section-head compact unlock-head">
               <h2>環境メモ</h2>
               <span id="unlockSummary">次の目標</span>
             </div>
             <div id="unlockList" class="unlock-list"></div>
           </section>
 
-          <section id="labPanel" class="panel management-panel" aria-label="交配ラボ">
+          <section id="labPanel" class="panel management-panel" aria-label="交配">
             <div class="section-head">
-              <h2>次世代の種を作る</h2>
+              <h2>交配</h2>
               <span id="seedName">スターキャロット</span>
             </div>
             <div class="lab-slots">
@@ -214,11 +239,10 @@
 
         <nav class="tabs" aria-label="表示切替">
           <button class="tab active" data-tab="field"><span>🌱</span>畑</button>
-          <button class="tab" data-tab="seed"><span>🌰</span>種</button>
-          <button class="tab" data-tab="storage"><span>📦</span>倉庫</button>
-          <button class="tab" data-tab="dex"><span>📖</span>図鑑</button>
-          <button class="tab" data-tab="missions"><span>🛰</span>開拓</button>
-          <button class="tab" data-tab="lab"><span>🧪</span>ラボ</button>
+          <button class="tab" data-tab="crop"><span>🥕</span>作物</button>
+          <button class="tab" data-tab="lab"><span>🧪</span>交配</button>
+          <button class="tab" data-tab="town"><span>🏘</span>街</button>
+          <button class="tab" data-tab="route"><span>🛰</span>航路</button>
         </nav>
       </div>
     </main>

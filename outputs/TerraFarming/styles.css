@@ -484,6 +484,17 @@ body[data-stage="緑の星"] .planet-core {
   white-space: nowrap;
 }
 
+.field-seed-tray {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid rgba(40, 103, 74, 0.13);
+  border-radius: 16px;
+  background: rgba(255, 253, 247, 0.76);
+  box-shadow: 0 8px 18px rgba(43, 62, 50, 0.06);
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1174,6 +1185,40 @@ body[data-stage="緑の星"] .planet-core {
   font-size: 0.9rem;
 }
 
+.town-facilities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.facility-card {
+  display: grid;
+  min-height: 74px;
+  align-content: center;
+  gap: 5px;
+  padding: 11px;
+  border: 1px solid rgba(40, 103, 74, 0.14);
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 8px 18px rgba(43, 62, 50, 0.06);
+}
+
+.facility-card strong {
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
+.facility-card span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.facility-card.muted {
+  background: rgba(255, 255, 255, 0.62);
+}
+
 .lab-crop-list {
   display: grid;
   gap: 8px;
@@ -1412,7 +1457,7 @@ body[data-stage="緑の星"] .planet-core {
   bottom: 0;
   z-index: 6;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding: 9px 10px 12px;
   border-top: 1px solid rgba(40, 103, 74, 0.14);
