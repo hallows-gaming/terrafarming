@@ -648,9 +648,10 @@ function renderField() {
     } else {
       const progress = cropProgress(plot.crop);
       const ready = progress >= 1;
+      const isSeedling = progress < 0.5;
       button.innerHTML = `
-        <div class="crop-icon crop-${plot.crop.visual}"></div>
-        <div class="plot-name">${ready ? "収穫OK" : plot.crop.name}</div>
+        <div class="${isSeedling ? "seedling-icon" : `crop-icon crop-${plot.crop.visual}`}"></div>
+        <div class="plot-name">${ready ? "収穫OK" : isSeedling ? "芽吹き中" : plot.crop.name}</div>
         <div class="progress"><span style="width:${Math.floor(progress * 100)}%"></span></div>
       `;
       button.addEventListener("click", () => {
