@@ -134,9 +134,17 @@
               <span id="seedName">スターキャロット</span>
             </div>
             <div class="lab-slots">
-              <button id="parentA" class="parent-slot">親Aを選択</button>
-              <button id="parentB" class="parent-slot">親Bを選択</button>
+              <button id="parentA" class="parent-slot" type="button">親Aを選択</button>
+              <button id="parentB" class="parent-slot" type="button">親Bを選択</button>
             </div>
+            <div id="labPicker" class="lab-picker" hidden>
+              <div class="section-head compact">
+                <h2 id="labPickerTitle">作物を選ぶ</h2>
+                <button id="labPickerClose" class="icon-button" type="button" aria-label="閉じる">×</button>
+              </div>
+              <div id="labCropList" class="lab-crop-list"></div>
+            </div>
+            <div id="labPrediction" class="lab-prediction">親を2つ選ぶと予想が表示されます。</div>
             <button id="breedBtn" class="primary wide" disabled>交配する</button>
             <div id="labResult" class="lab-result"></div>
           </section>

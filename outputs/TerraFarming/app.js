@@ -119,12 +119,12 @@ const upgrades = [
   },
   {
     id: "geneMemo",
-    title: "品種メモリ",
-    desc: "交配時の突然変異率を上げる",
-    bonusKey: "mutation",
-    bonusPerLevel: 5,
+    title: "交配マシン",
+    desc: "交配が成功する確率を上げる",
+    bonusKey: "breeding",
+    bonusPerLevel: 10,
     baseCost: 36,
-    label: "突然変異率"
+    label: "交配成功率"
   }
 ];
 
@@ -325,6 +325,7 @@ let selectedParentB = null;
 let audioContext = null;
 let pendingSellId = null;
 let activeDeliveryId = null;
+let activeParentSlot = null;
 let bgmTimer = null;
 let bgmMode = null;
 let introIndex = 0;
@@ -368,6 +369,11 @@ const els = {
   seedName: document.querySelector("#seedName"),
   parentA: document.querySelector("#parentA"),
   parentB: document.querySelector("#parentB"),
+  labPicker: document.querySelector("#labPicker"),
+  labPickerTitle: document.querySelector("#labPickerTitle"),
+  labPickerClose: document.querySelector("#labPickerClose"),
+  labCropList: document.querySelector("#labCropList"),
+  labPrediction: document.querySelector("#labPrediction"),
   breedBtn: document.querySelector("#breedBtn"),
   labResult: document.querySelector("#labResult"),
   logText: document.querySelector("#logText"),
@@ -467,7 +473,7 @@ function loadState() {
     profile: { playerName: "開拓者", planetName: "名もなき小惑星", introSeen: false },
     reportedMissions: [],
     completedRequests: [],
-    bonuses: { growth: 0, mutation: 0, sale: 0 },
+    bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0 },
     upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0 },
     lastSeen: Date.now()
   });
@@ -505,7 +511,7 @@ function normalizeState(raw) {
     },
     reportedMissions: raw.reportedMissions ?? raw.completedMissions ?? [],
     completedRequests: raw.completedRequests ?? [],
-    bonuses: { growth: 0, mutation: 0, sale: 0, ...raw.bonuses },
+    bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0, ...raw.bonuses },
     upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0, ...raw.upgradeLevels },
     lastSeen: raw.lastSeen ?? Date.now()
   };
@@ -691,6 +697,7 @@ function sellAll() {
   state.storage = [];
   selectedParentA = null;
   selectedParentB = null;
+  activeParentSlot = null;
   pendingSellId = null;
   playSellSound();
   setLog(`${count}個の作物を売って${total}コインを得ました。`);
@@ -701,17 +708,30 @@ function selectParent(cropId) {
   const crop = state.storage.find((item) => item.id === cropId);
   if (!crop) return;
 
-  if (selectedParentA === cropId) {
-    selectedParentA = null;
-  } else if (selectedParentB === cropId) {
-    selectedParentB = null;
-  } else if (!selectedParentA) {
-    selectedParentA = cropId;
-  } else {
+  if (activeParentSlot === "B") {
     selectedParentB = cropId;
+  } else {
+    selectedParentA = cropId;
   }
+  if (selectedParentA === selectedParentB) {
+    if (activeParentSlot === "B") selectedParentA = null;
+    else selectedParentB = null;
+  }
+  activeParentSlot = null;
   pendingSellId = null;
+  els.labResult.textContent = "";
   render();
+}
+
+function openParentPicker(slot) {
+  activeParentSlot = slot;
+  pendingSellId = null;
+  renderLab();
+}
+
+function closeParentPicker() {
+  activeParentSlot = null;
+  renderLab();
 }
 
 function requestSell(cropId) {
@@ -739,7 +759,22 @@ function breed() {
   const parentB = state.storage.find((item) => item.id === selectedParentB);
   if (!parentA || !parentB || parentA.id === parentB.id) return;
 
-  const mutationChance = 0.22 + totalBonus("mutation") / 100;
+  const successRate = breedingSuccessRate();
+  const success = Math.random() < successRate;
+  state.storage = state.storage.filter((item) => item.id !== parentA.id && item.id !== parentB.id);
+  selectedParentA = null;
+  selectedParentB = null;
+  activeParentSlot = null;
+
+  if (!success) {
+    playButtonSound();
+    setLog("交配はうまくまとまりませんでした。交配マシンを強化すると成功率が上がります。");
+    els.labResult.textContent = `交配失敗。成功率は${Math.round(successRate * 100)}%でした。`;
+    saveAndRender();
+    return;
+  }
+
+  const mutationChance = 0.08 + stageBonus("mutation") / 100;
   const mutation = Math.random() < mutationChance;
   const nextStats = {};
   Object.keys(cropCatalog[parentA.family]?.stats ?? baseSeed.stats).forEach((key) => {
@@ -759,10 +794,7 @@ function breed() {
   };
   state.selectedFamily = state.seed.family;
   state.seedBank[state.seed.family] = decorateSeed(state.seed);
-  state.storage = state.storage.filter((item) => item.id !== parentA.id && item.id !== parentB.id);
   state.stats.totalBred += 1;
-  selectedParentA = null;
-  selectedParentB = null;
 
   playRewardSound();
   setLog(mutation ? `突然変異で${state.seed.name}が生まれました。` : `${state.seed.name}の種ができました。`);
@@ -864,6 +896,7 @@ function clearInvalidParents() {
   const ids = new Set(state.storage.map((item) => item.id));
   if (!ids.has(selectedParentA)) selectedParentA = null;
   if (!ids.has(selectedParentB)) selectedParentB = null;
+  if (!state.storage.length) activeParentSlot = null;
 }
 
 function dominantStat(stats) {
@@ -1028,7 +1061,7 @@ function renderField() {
 function renderMissions() {
   const reported = state.reportedMissions.length;
   els.missionProgress.textContent = `${reported}/${missions.length}`;
-  els.bonusSummary.textContent = `成長 +${totalBonus("growth")}% / 売却 +${totalBonus("sale")}% / 変異 +${totalBonus("mutation")}%`;
+  els.bonusSummary.textContent = `成長 +${totalBonus("growth")}% / 売却 +${totalBonus("sale")}% / 交配 +${totalBonus("breeding")}%`;
   els.unlockSummary.textContent = nextUnlockText();
   els.missionList.innerHTML = "";
   els.upgradeList.innerHTML = "";
@@ -1075,7 +1108,7 @@ function renderMissions() {
     `${state.unlockedPlots}/9区画の畑を利用可能`,
     `成長速度 +${totalBonus("growth")}%`,
     `売却価格 +${totalBonus("sale")}%`,
-    `突然変異率 +${totalBonus("mutation")}%`,
+    `交配成功率 ${Math.round(breedingSuccessRate() * 100)}%`,
     `次段階: ${nextStageRequirement()}`,
     ...nextStageShortfalls(),
     `現在の開拓段階: ${terraStageName()}`
@@ -1181,7 +1214,6 @@ function renderStorage() {
       </span>
       <div class="item-actions">
         <strong>${saleValue(crop)}C</strong>
-        <button class="mini-action parent-pick" data-parent="${crop.id}">交配に使う</button>
         ${
           confirmingSell
             ? `<div class="confirm-actions"><button class="mini-action sell" data-sell="${crop.id}">売却</button><button class="mini-action cancel" data-cancel-sell="true">やめる</button></div>`
@@ -1199,11 +1231,87 @@ function renderLab() {
   fillParentSlot(els.parentA, parentA, "親Aを選択");
   fillParentSlot(els.parentB, parentB, "親Bを選択");
   els.breedBtn.disabled = !parentA || !parentB || parentA.id === parentB.id;
+  renderLabPicker();
+  renderLabPrediction(parentA, parentB);
 }
 
 function fillParentSlot(el, crop, fallback) {
   el.classList.toggle("filled", Boolean(crop));
-  el.textContent = crop ? `第${crop.generation}世代 ${crop.name}` : fallback;
+  el.innerHTML = crop
+    ? `
+      <span class="parent-label">${el === els.parentA ? "親A" : "親B"}</span>
+      <strong>第${crop.generation}世代 ${crop.name}</strong>
+      <small>${Object.entries(crop.stats).map(([key, value]) => `${statLabels[key]}${value}`).join(" / ")}</small>
+    `
+    : `<span class="parent-empty">${fallback}</span>`;
+}
+
+function renderLabPicker() {
+  const isOpen = Boolean(activeParentSlot);
+  els.labPicker.hidden = !isOpen;
+  if (!isOpen) return;
+
+  els.labPickerTitle.textContent = `親${activeParentSlot}にする作物`;
+  els.labCropList.innerHTML = "";
+
+  if (!state.storage.length) {
+    const empty = document.createElement("div");
+    empty.className = "delivery-empty";
+    empty.textContent = "倉庫に作物がありません。収穫してから交配しましょう。";
+    els.labCropList.appendChild(empty);
+    return;
+  }
+
+  state.storage.forEach((crop) => {
+    const isOtherParent = activeParentSlot === "A" ? crop.id === selectedParentB : crop.id === selectedParentA;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lab-crop";
+    button.disabled = isOtherParent;
+    button.dataset.parentCrop = crop.id;
+    button.innerHTML = `
+      <span>
+        <span class="item-name">第${crop.generation}世代 ${crop.name}</span>
+        <span class="item-stats">
+          ${Object.entries(crop.stats).map(([key, value]) => `<span class="chip">${statLabels[key]} ${value}</span>`).join("")}
+          <span class="chip">食 ${foodValueForCrop(crop)}</span>
+        </span>
+      </span>
+      <strong>${isOtherParent ? "選択中" : "選ぶ"}</strong>
+    `;
+    els.labCropList.appendChild(button);
+  });
+}
+
+function renderLabPrediction(parentA, parentB) {
+  if (!parentA || !parentB || parentA.id === parentB.id) {
+    els.labPrediction.textContent = "親を2つ選ぶと予想が表示されます。";
+    return;
+  }
+
+  const preview = previewBreed(parentA, parentB);
+  els.labPrediction.innerHTML = `
+    <span>できそうな種</span>
+    <strong>第${preview.generation}世代 ${preview.name}</strong>
+    <small>成功率 ${Math.round(breedingSuccessRate() * 100)}% / ${Object.entries(preview.stats).map(([key, value]) => `${statLabels[key]}${value}`).join(" / ")}</small>
+  `;
+}
+
+function breedingSuccessRate() {
+  return Math.min(0.9, 0.3 + totalBonus("breeding") / 100);
+}
+
+function previewBreed(parentA, parentB) {
+  const nextStats = {};
+  Object.keys(cropCatalog[parentA.family]?.stats ?? baseSeed.stats).forEach((key) => {
+    nextStats[key] = Math.max(1, Math.round((parentA.stats[key] + parentB.stats[key]) / 2) + 1);
+  });
+
+  return {
+    name: makeCropName(nextStats, false, parentA.family),
+    generation: Math.max(parentA.generation, parentB.generation) + 1,
+    stats: nextStats
+  };
 }
 
 function nextStageRequirement() {
@@ -1399,11 +1507,7 @@ els.deliveryModal.addEventListener("click", (event) => {
 });
 
 els.storageList.addEventListener("click", (event) => {
-  const parentButton = event.target.closest("[data-parent]");
   const sellButton = event.target.closest("[data-sell]");
-  if (parentButton) {
-    selectParent(parentButton.dataset.parent);
-  }
   const requestSellButton = event.target.closest("[data-sell-request]");
   if (requestSellButton) {
     requestSell(requestSellButton.dataset.sellRequest);
@@ -1420,13 +1524,14 @@ els.plantAllBtn.addEventListener("click", plantAll);
 els.harvestAllBtn.addEventListener("click", harvestAll);
 els.sellAllBtn.addEventListener("click", sellAll);
 els.breedBtn.addEventListener("click", breed);
-els.parentA.addEventListener("click", () => {
-  selectedParentA = null;
-  render();
-});
-els.parentB.addEventListener("click", () => {
-  selectedParentB = null;
-  render();
+els.parentA.addEventListener("click", () => openParentPicker("A"));
+els.parentB.addEventListener("click", () => openParentPicker("B"));
+els.labPickerClose.addEventListener("click", closeParentPicker);
+els.labCropList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-parent-crop]");
+  if (button) {
+    selectParent(button.dataset.parentCrop);
+  }
 });
 els.resetBtn.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);

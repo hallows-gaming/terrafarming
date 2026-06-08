@@ -879,10 +879,6 @@ body[data-stage="緑の星"] .planet-core {
   color: var(--muted);
 }
 
-.mini-action.parent-pick {
-  min-width: 84px;
-}
-
 .unlock {
   padding: 10px;
   color: #405448;
@@ -950,6 +946,9 @@ body[data-stage="緑の星"] .planet-core {
 }
 
 .parent-slot {
+  display: grid;
+  gap: 4px;
+  align-content: center;
   min-height: 76px;
   padding: 8px;
   border: 1px dashed #aab6ad;
@@ -963,6 +962,99 @@ body[data-stage="緑の星"] .planet-core {
   border-style: solid;
   border-color: var(--green);
   color: var(--ink);
+}
+
+.parent-slot strong,
+.parent-slot small,
+.parent-slot span {
+  min-width: 0;
+}
+
+.parent-slot strong {
+  font-size: 0.82rem;
+}
+
+.parent-slot small,
+.parent-label,
+.parent-empty {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.lab-picker {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(40, 103, 74, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 253, 247, 0.86);
+}
+
+.lab-picker[hidden] {
+  display: none;
+}
+
+.section-head.compact {
+  margin-bottom: 0;
+}
+
+.section-head.compact h2 {
+  font-size: 0.9rem;
+}
+
+.lab-crop-list {
+  display: grid;
+  gap: 8px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.lab-crop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(40, 103, 74, 0.14);
+  border-radius: 14px;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+}
+
+.lab-crop:disabled {
+  opacity: 0.52;
+}
+
+.lab-crop strong {
+  color: var(--green);
+  font-size: 0.78rem;
+}
+
+.lab-prediction {
+  display: grid;
+  gap: 5px;
+  min-height: 54px;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid rgba(40, 103, 74, 0.14);
+  border-radius: 14px;
+  background: #eef7ef;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.lab-prediction strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.lab-prediction small {
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .lab-result {
