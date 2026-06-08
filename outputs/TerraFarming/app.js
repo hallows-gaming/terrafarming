@@ -903,6 +903,41 @@ function cropStageImageMarkup(crop, stage, className = "crop-art", alt = "") {
     : cropImageMarkup(crop, className, alt);
 }
 
+function cropVisualEffects(crop) {
+  const stats = crop?.stats ?? {};
+  const sizeLevel = stats.size ?? 0;
+  const tinyLevel = stats.smallness ?? stats.tiny ?? 0;
+  const shineLevel = stats.sparkle ?? stats.shine ?? stats.rarity ?? 0;
+  let scale = 1;
+
+  if (sizeLevel >= 20) {
+    scale = 1.8;
+  } else if (sizeLevel >= 10) {
+    scale = 1.3;
+  }
+
+  if (tinyLevel >= 20) {
+    scale = 0.5;
+  } else if (tinyLevel >= 10) {
+    scale = 0.75;
+  }
+
+  return {
+    scale,
+    sparkle: shineLevel >= 10,
+    glow: shineLevel >= 20
+  };
+}
+
+function cropVisualClass(crop) {
+  const effects = cropVisualEffects(crop);
+  return [
+    "crop-visual",
+    effects.sparkle ? "sparkle" : "",
+    effects.glow ? "glow" : ""
+  ].filter(Boolean).join(" ");
+}
+
 function terraformProgress(environment, def = currentPlanetDef()) {
   const targets = def.terraformTargets ?? { oxygen: 500, water: 500, nitrogen: 500 };
   const keys = ["oxygen", "water", "nitrogen"];
@@ -1227,8 +1262,8 @@ function breed() {
   const mutationChance = 0.08 + stageBonus("mutation") / 100;
   const mutation = Math.random() < mutationChance;
   const nextStats = {};
-  Object.keys(cropCatalog[parentA.family]?.stats ?? baseSeed.stats).forEach((key) => {
-    const average = Math.round((parentA.stats[key] + parentB.stats[key]) / 2);
+  breedingStatKeys(parentA, parentB).forEach((key) => {
+    const average = Math.round(((parentA.stats[key] ?? 0) + (parentB.stats[key] ?? 0)) / 2);
     const drift = Math.floor(Math.random() * 3);
     nextStats[key] = Math.max(1, average + drift + (mutation ? 1 : 0));
   });
@@ -1419,6 +1454,27 @@ function makeCropName(stats, mutation, family = state.selectedFamily) {
   return `${mutation ? "ミュータント" : prefixes[dominant]}${suffix}`;
 }
 
+function statLabel(key) {
+  const extraLabels = { smallness: "小", tiny: "小", sparkle: "輝", shine: "輝" };
+  return statLabels[key] ?? extraLabels[key] ?? key;
+}
+
+function statSummary(stats, separator = " / ") {
+  return Object.entries(stats).map(([key, value]) => `${statLabel(key)}${value}`).join(separator);
+}
+
+function statChips(stats) {
+  return Object.entries(stats).map(([key, value]) => `<span class="chip">${statLabel(key)} ${value}</span>`).join("");
+}
+
+function breedingStatKeys(parentA, parentB) {
+  return [...new Set([
+    ...Object.keys(cropCatalog[parentA.family]?.stats ?? baseSeed.stats),
+    ...Object.keys(parentA.stats ?? {}),
+    ...Object.keys(parentB.stats ?? {})
+  ])];
+}
+
 function terraStageName(environment = state.environment) {
   return stageRules.find((stage) => environment.oxygen >= stage.oxygen && environment.water >= stage.water && environment.nitrogen >= stage.nitrogen)?.name ?? "荒野";
 }
@@ -1605,13 +1661,24 @@ function renderField() {
       const ready = growthStage === "ready";
       const isSeedling = growthStage === "seedling";
       const stageImage = growthStage === "stage1" ? "stage1" : growthStage === "stage2" ? "stage2" : "ready";
+      const cropArt = isSeedling
+        ? `<img class="crop-art plot-art" src="assets/images/crops/common-sprout.png" alt="芽" draggable="false" />`
+        : cropStageImageMarkup(plot.crop, stageImage, "crop-art plot-art", plot.crop.name);
       button.dataset.cropId = plot.crop.id;
       button.dataset.growthStage = growthStage;
       button.innerHTML = `
-        ${isSeedling ? `<img class="crop-art plot-art" src="assets/images/crops/common-sprout.png" alt="芽" draggable="false" />` : cropStageImageMarkup(plot.crop, stageImage, "crop-art plot-art", plot.crop.name)}
+        ${cropArt}
         <div class="plot-name">${ready ? "収穫OK" : isSeedling ? "芽吹き中" : growthStage === "stage1" ? "成長中" : "もうすぐ収穫"}</div>
         <div class="progress"><span style="width:${Math.floor(progress * 100)}%"></span></div>
       `;
+      const cropArtElement = button.querySelector(".plot-art");
+      if (cropArtElement) {
+        const cropVisual = document.createElement("div");
+        cropVisual.className = cropVisualClass(plot.crop);
+        cropVisual.style.setProperty("--crop-scale", cropVisualEffects(plot.crop).scale);
+        cropArtElement.parentElement.insertBefore(cropVisual, cropArtElement);
+        cropVisual.appendChild(cropArtElement);
+      }
       button.addEventListener("click", () => {
         if (ready) {
           const cropName = plot.crop.name;
@@ -1803,7 +1870,7 @@ function renderDeliveryModal() {
     item.innerHTML = `
       <span class="item-name">第${crop.generation}世代 ${crop.name}</span>
       <span class="item-stats">
-        ${Object.entries(crop.stats).map(([key, value]) => `<span class="chip">${statLabels[key]} ${value}</span>`).join("")}
+        ${statChips(crop.stats)}
         <span class="chip">酸 ${crop.environmentYield.oxygen}</span>
         <span class="chip">水 ${crop.environmentYield.water}</span>
         <span class="chip">窒 ${crop.environmentYield.nitrogen}</span>
@@ -1839,7 +1906,7 @@ function renderStorage() {
       <span>
         <span class="item-name">第${crop.generation}世代 ${crop.name}</span>
         <span class="item-stats">
-          ${Object.entries(crop.stats).map(([key, value]) => `<span class="chip">${statLabels[key]} ${value}</span>`).join("")}
+          ${statChips(crop.stats)}
           <span class="chip">食 ${foodValueForCrop(crop)}</span>
         </span>
       </span>
@@ -1907,7 +1974,7 @@ function fillParentSlot(el, crop, fallback) {
     ? `
       <span class="parent-label">${el === els.parentA ? "親A" : "親B"}</span>
       <strong>第${crop.generation}世代 ${crop.name}</strong>
-      <small>${Object.entries(crop.stats).map(([key, value]) => `${statLabels[key]}${value}`).join(" / ")}</small>
+      <small>${statSummary(crop.stats)}</small>
     `
     : `<span class="parent-empty">${fallback}</span>`;
 }
@@ -1939,7 +2006,7 @@ function renderLabPicker() {
       <span>
         <span class="item-name">第${crop.generation}世代 ${crop.name}</span>
         <span class="item-stats">
-          ${Object.entries(crop.stats).map(([key, value]) => `<span class="chip">${statLabels[key]} ${value}</span>`).join("")}
+          ${statChips(crop.stats)}
           <span class="chip">食 ${foodValueForCrop(crop)}</span>
         </span>
       </span>
@@ -1959,7 +2026,7 @@ function renderLabPrediction(parentA, parentB) {
   els.labPrediction.innerHTML = `
     <span>できそうな種</span>
     <strong>第${preview.generation}世代 ${preview.name}</strong>
-    <small>成功率 ${Math.round(breedingSuccessRate() * 100)}% / ${Object.entries(preview.stats).map(([key, value]) => `${statLabels[key]}${value}`).join(" / ")}</small>
+    <small>成功率 ${Math.round(breedingSuccessRate() * 100)}% / ${statSummary(preview.stats)}</small>
   `;
 }
 
@@ -1969,8 +2036,8 @@ function breedingSuccessRate() {
 
 function previewBreed(parentA, parentB) {
   const nextStats = {};
-  Object.keys(cropCatalog[parentA.family]?.stats ?? baseSeed.stats).forEach((key) => {
-    nextStats[key] = Math.max(1, Math.round((parentA.stats[key] + parentB.stats[key]) / 2) + 1);
+  breedingStatKeys(parentA, parentB).forEach((key) => {
+    nextStats[key] = Math.max(1, Math.round(((parentA.stats[key] ?? 0) + (parentB.stats[key] ?? 0)) / 2) + 1);
   });
 
   return {

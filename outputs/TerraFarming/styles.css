@@ -585,6 +585,65 @@ body[data-stage="緑の星"] .planet-core {
   filter: drop-shadow(0 7px 0 rgba(45, 33, 22, 0.18));
 }
 
+.crop-visual {
+  position: relative;
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  transform: scale(var(--crop-scale, 1));
+  transform-origin: center bottom;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.crop-visual .plot-art {
+  width: min(116%, 78px);
+  height: min(116%, 78px);
+}
+
+.crop-visual.sparkle::before,
+.crop-visual.sparkle::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #fff4a8;
+  border: 2px solid rgba(93, 59, 23, 0.35);
+  box-shadow: 18px 12px 0 -2px #dff7ff, -16px 21px 0 -3px #ffffff;
+  animation: crop-sparkle 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.crop-visual.sparkle::before {
+  top: 8px;
+  right: 7px;
+}
+
+.crop-visual.sparkle::after {
+  left: 9px;
+  bottom: 13px;
+  animation-delay: 0.55s;
+}
+
+.crop-visual.glow {
+  filter: drop-shadow(0 0 10px rgba(255, 238, 128, 0.82));
+}
+
+@keyframes crop-sparkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.7) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(12deg);
+  }
+}
+
 .crop-size {
   width: 56px;
   height: 66px;
