@@ -830,6 +830,7 @@ body[data-stage="緑の星"] .planet-core {
 .upgrade-list,
 .unlock-list,
 .request-list,
+.license-list,
 .delivery-crop-list,
 .list {
   display: grid;
@@ -875,6 +876,7 @@ body[data-stage="緑の星"] .planet-core {
 .mission,
 .upgrade,
 .unlock,
+.license,
 .planet-route,
 .coop-request,
 .item {
@@ -885,6 +887,7 @@ body[data-stage="緑の星"] .planet-core {
 
 .mission,
 .upgrade,
+.license,
 .planet-route,
 .coop-request,
 .item {
@@ -905,7 +908,8 @@ body[data-stage="緑の星"] .planet-core {
 }
 
 .mission div,
-.upgrade div {
+.upgrade div,
+.license div {
   display: grid;
   gap: 4px;
 }
@@ -972,6 +976,7 @@ body[data-stage="緑の星"] .planet-core {
 
 .mission strong,
 .upgrade strong,
+.license strong,
 .coop-request strong,
 .item-name {
   font-size: 0.94rem;
@@ -979,7 +984,8 @@ body[data-stage="緑の星"] .planet-core {
 }
 
 .mission span,
-.upgrade span {
+.upgrade span,
+.license span {
   font-size: 0.84rem;
 }
 
@@ -992,9 +998,24 @@ body[data-stage="緑の星"] .planet-core {
 
 .mission small,
 .upgrade small,
+.license small,
 .coop-request small {
   color: var(--muted);
   font-size: 0.76rem;
+}
+
+.license.owned {
+  border-color: rgba(79, 157, 105, 0.34);
+  background: #eff7ee;
+}
+
+.license.available {
+  border-color: rgba(197, 138, 34, 0.32);
+  background: #fff8e8;
+}
+
+.license.locked {
+  background: #f2f3ef;
 }
 
 .mission.done,

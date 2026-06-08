@@ -98,6 +98,18 @@ const cropCatalog = {
 };
 
 const cropDexOrder = ["carrot", "tomato", "beans", "rice", "potato", "pepper"];
+const seedLicenses = {
+  home: {
+    carrot: { cost: 0, unlock: 0, initial: true, reason: "開拓局おすすめの入門作物です。" },
+    tomato: { cost: 80, unlock: 10, reason: "水分保持が安定してきたため、栽培許可を申請できます。" },
+    beans: { cost: 120, unlock: 20, reason: "土壌の窒素循環が始まったため、取り扱いできます。" }
+  },
+  frontier: {
+    rice: { cost: 500, unlock: 0, initial: true, reason: "水場のある区画で栽培できます。" },
+    potato: { cost: 900, unlock: 25, reason: "地盤を少し砕けるようになると申請できます。" },
+    pepper: { cost: 1400, unlock: 50, reason: "土壌の刺激成分が安定すると取り扱いできます。" }
+  }
+};
 const planetCatalog = {
   home: {
     id: "home",
@@ -459,6 +471,8 @@ const els = {
   coopSummary: document.querySelector("#coopSummary"),
   coopRequestList: document.querySelector("#coopRequestList"),
   bonusSummary: document.querySelector("#bonusSummary"),
+  licenseSummary: document.querySelector("#licenseSummary"),
+  seedLicenseList: document.querySelector("#seedLicenseList"),
   upgradeList: document.querySelector("#upgradeList"),
   unlockSummary: document.querySelector("#unlockSummary"),
   unlockList: document.querySelector("#unlockList"),
@@ -579,6 +593,7 @@ function loadState() {
       tomato: createBaseSeed("tomato"),
       beans: createBaseSeed("beans")
     },
+    seedLicenses: ["carrot"],
     seed: structuredClone(baseSeed),
     storage: [],
     resources: { food: 0, coins: 0, terraPoints: 0 },
@@ -610,6 +625,7 @@ function createPlanetState(planetId, customName) {
     unlockedPlots: def.initialPlots,
     selectedFamily: firstFamily,
     seedBank,
+    seedLicenses: [firstFamily],
     seed: structuredClone(seedBank[firstFamily]),
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0 },
     reportedMissions: []
@@ -620,7 +636,10 @@ function normalizePlanetState(planetId, planet = {}) {
   const def = planetCatalog[planetId] ?? planetCatalog.home;
   const base = createPlanetState(planetId, planet.name);
   const seedBank = { ...base.seedBank, ...planet.seedBank };
-  const selectedFamily = seedBank[planet.selectedFamily] ? planet.selectedFamily : base.selectedFamily;
+  const fallbackLicenses = planet.seedLicenses ?? Object.keys(planet.seedBank ?? {});
+  const seedLicenseSet = new Set([base.selectedFamily, ...fallbackLicenses].filter((family) => def.cropFamilies.includes(family)));
+  const seedLicenseList = [...seedLicenseSet];
+  const selectedFamily = seedBank[planet.selectedFamily] && seedLicenseSet.has(planet.selectedFamily) ? planet.selectedFamily : seedLicenseList[0] ?? base.selectedFamily;
   const normalized = {
     ...base,
     ...planet,
@@ -628,7 +647,8 @@ function normalizePlanetState(planetId, planet = {}) {
     unlockedPlots: Math.min(def.maxPlots, Math.max(def.initialPlots, planet.unlockedPlots ?? base.unlockedPlots)),
     selectedFamily,
     seedBank,
-    seed: planet.seed ?? seedBank[selectedFamily],
+    seedLicenses: seedLicenseList,
+    seed: seedBank[selectedFamily] ?? planet.seed ?? base.seed,
     environment: { ...base.environment, ...planet.environment },
     reportedMissions: planet.reportedMissions ?? []
   };
@@ -651,6 +671,7 @@ function syncRootToActivePlanet(target = state) {
   planet.unlockedPlots = target.unlockedPlots;
   planet.selectedFamily = target.selectedFamily;
   planet.seedBank = target.seedBank;
+  planet.seedLicenses = target.seedLicenses;
   planet.seed = target.seed;
   planet.environment = target.environment;
   planet.reportedMissions = target.reportedMissions;
@@ -663,6 +684,7 @@ function syncActivePlanetToRoot(target = state) {
   target.unlockedPlots = planet.unlockedPlots;
   target.selectedFamily = planet.selectedFamily;
   target.seedBank = planet.seedBank;
+  target.seedLicenses = planet.seedLicenses;
   target.seed = planet.seed;
   target.environment = planet.environment;
   target.reportedMissions = planet.reportedMissions;
@@ -709,6 +731,7 @@ function normalizeState(raw) {
     unlockedPlots: raw.unlockedPlots ?? planetCatalog.home.initialPlots,
     selectedFamily: raw.selectedFamily ?? raw.seed?.family ?? "carrot",
     seedBank: { carrot: createBaseSeed("carrot"), tomato: createBaseSeed("tomato"), beans: createBaseSeed("beans"), ...raw.seedBank },
+    seedLicenses: raw.seedLicenses ?? (Object.keys(raw.seedBank ?? {}).length ? Object.keys(raw.seedBank) : ["carrot"]),
     seed: raw.seed ?? structuredClone(baseSeed),
     storage: raw.storage ?? [],
     resources: { food: 0, coins, terraPoints: 0, ...raw.resources, coins },
@@ -738,6 +761,7 @@ function normalizeState(raw) {
       unlockedPlots: normalized.unlockedPlots,
       selectedFamily: normalized.selectedFamily,
       seedBank: normalized.seedBank,
+      seedLicenses: normalized.seedLicenses,
       seed: normalized.seed,
       environment: normalized.environment,
       reportedMissions: normalized.reportedMissions
@@ -753,7 +777,17 @@ function normalizeState(raw) {
     normalized.activePlanetId = HOME_PLANET_ID;
   }
   syncActivePlanetToRoot(normalized);
+  const legacyRootLicenses = raw.seedLicenses ?? (Object.keys(raw.seedBank ?? {}).length ? Object.keys(raw.seedBank) : null);
+  if (!hasPlanetData && legacyRootLicenses) {
+    const def = planetCatalog[normalized.activePlanetId] ?? planetCatalog.home;
+    normalized.seedLicenses = legacyRootLicenses.filter((family) => def.cropFamilies.includes(family));
+    normalized.planets[normalized.activePlanetId].seedLicenses = normalized.seedLicenses;
+  }
   normalized.seedBank = Object.fromEntries(Object.entries(normalized.seedBank).map(([family, seed]) => [family, decorateSeed(seed)]));
+  normalized.seedLicenses = normalized.seedLicenses?.filter((family) => normalized.seedBank[family]) ?? [normalized.selectedFamily];
+  if (!normalized.seedLicenses.includes(normalized.selectedFamily)) {
+    normalized.selectedFamily = normalized.seedLicenses[0] ?? (planetCatalog[normalized.activePlanetId] ?? planetCatalog.home).cropFamilies[0];
+  }
   normalized.seed = decorateSeed(normalized.seedBank[normalized.selectedFamily] ?? normalized.seed);
   normalized.storage = normalized.storage.map((crop) => decorateCrop(crop));
   normalized.plots = normalized.plots.map((plot, id) => ({
@@ -804,6 +838,19 @@ function createBaseSeed(family) {
     environmentYield: structuredClone(crop.environmentYield),
     stats: structuredClone(crop.stats)
   };
+}
+
+function hasSeedLicense(family) {
+  return state.seedLicenses?.includes(family);
+}
+
+function licenseRule(family, planetId = state.activePlanetId) {
+  return seedLicenses[planetId]?.[family] ?? { cost: 0, unlock: 0, reason: "交配や発見登録で扱えるようになります。" };
+}
+
+function canRequestLicense(family) {
+  const rule = licenseRule(family);
+  return terraformProgress(state.environment).percent >= rule.unlock;
 }
 
 function cropImage(cropOrFamily) {
@@ -968,7 +1015,7 @@ function createCropFromSeed() {
 
 function plant(plotId) {
   const plot = state.plots.find((item) => item.id === plotId);
-  if (!plot || plot.crop || plot.id >= state.unlockedPlots) return;
+  if (!plot || plot.crop || plot.id >= state.unlockedPlots || !hasSeedLicense(state.seed.family)) return;
 
   plot.crop = createCropFromSeed();
   state.plantedCrops[state.seed.family] = true;
@@ -978,7 +1025,7 @@ function plant(plotId) {
 }
 
 function selectSeed(family) {
-  if (!state.seedBank[family]) return;
+  if (!state.seedBank[family] || !hasSeedLicense(family)) return;
   state.selectedFamily = family;
   state.seed = decorateSeed(state.seedBank[family]);
   playPlantSound();
@@ -988,6 +1035,7 @@ function selectSeed(family) {
 
 function plantAll() {
   let count = 0;
+  if (!hasSeedLicense(state.seed.family)) return;
   state.plots.forEach((plot) => {
     if (!plot.crop && plot.id < state.unlockedPlots) {
       plot.crop = createCropFromSeed();
@@ -1213,6 +1261,18 @@ function buyUpgrade(upgradeId) {
   saveAndRender();
 }
 
+function buySeedLicense(family) {
+  if (!state.seedBank[family] || hasSeedLicense(family) || !canRequestLicense(family)) return;
+  const rule = licenseRule(family);
+  if (state.resources.coins < rule.cost) return;
+
+  state.resources.coins -= rule.cost;
+  state.seedLicenses = [...new Set([...(state.seedLicenses ?? []), family])];
+  playRewardSound();
+  setLog(`${cropCatalog[family]?.name ?? "新しい作物"}の栽培ライセンスを取得しました。`);
+  saveAndRender();
+}
+
 function requestRewardText(reward) {
   return [
     reward.coins ? `コイン ${reward.coins}` : "",
@@ -1377,6 +1437,7 @@ function render() {
   renderPlanets();
   renderMissions();
   renderCoopRequests();
+  renderSeedLicenses();
   renderStorage();
   renderDex();
   renderLab();
@@ -1469,7 +1530,7 @@ function renderPlanets() {
 function renderSeedPicker() {
   els.selectedSeedLabel.textContent = state.seed.name;
   els.seedPicker.innerHTML = "";
-  Object.entries(state.seedBank).forEach(([family, seed]) => {
+  Object.entries(state.seedBank).filter(([family]) => hasSeedLicense(family)).forEach(([family, seed]) => {
     const button = document.createElement("button");
     const selected = family === state.selectedFamily;
     const planted = Boolean(state.plantedCrops[family]);
@@ -1536,6 +1597,33 @@ function renderField() {
       });
     }
     els.fieldGrid.appendChild(button);
+  });
+}
+
+function renderSeedLicenses() {
+  const def = currentPlanetDef();
+  const licensed = def.cropFamilies.filter((family) => hasSeedLicense(family)).length;
+  els.licenseSummary.textContent = `${licensed}/${def.cropFamilies.length}`;
+  els.seedLicenseList.innerHTML = "";
+
+  def.cropFamilies.forEach((family) => {
+    const crop = cropCatalog[family];
+    const rule = licenseRule(family);
+    const owned = hasSeedLicense(family);
+    const available = !owned && canRequestLicense(family);
+    const item = document.createElement("div");
+    item.className = `license ${owned ? "owned" : available ? "available" : "locked"}`;
+    item.innerHTML = `
+      <div>
+        <strong>${crop?.name ?? family} 栽培ライセンス</strong>
+        <span>${crop?.desc ?? "新しい作物を栽培できる許可です。"}</span>
+        <small>${owned ? "取得済み" : available ? rule.reason : `開拓度${rule.unlock}%で申請できます`}</small>
+      </div>
+      <button class="mini-action" ${available && state.resources.coins >= rule.cost ? "" : "disabled"} data-license="${family}">
+        ${owned ? "許可済" : available ? `${rule.cost}C` : "未入荷"}
+      </button>
+    `;
+    els.seedLicenseList.appendChild(item);
   });
 }
 
@@ -2068,6 +2156,13 @@ els.upgradeList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-upgrade]");
   if (button) {
     buyUpgrade(button.dataset.upgrade);
+  }
+});
+
+els.seedLicenseList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-license]");
+  if (button) {
+    buySeedLicense(button.dataset.license);
   }
 });
 
