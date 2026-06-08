@@ -13,28 +13,38 @@ const statLabels = {
 
 const cropCatalog = {
   carrot: {
+    no: 1,
     name: "スターキャロット",
     desc: "酸素を増やしやすい基本作物",
+    flavor: "星形の葉に朝露をためる、開拓局おすすめの入門野菜。",
+    image: "assets/images/crops/star-carrot.png",
     visual: "vitality",
     stats: { size: 6, sweetness: 5, aroma: 4, vitality: 7, rarity: 1 },
     environmentYield: { oxygen: 5, water: 2, nitrogen: 1 }
   },
   tomato: {
+    no: 2,
     name: "ルナトマト",
     desc: "水分を増やしやすいみずみずしい作物",
+    flavor: "月明かりのようなつやを持つ、食卓が少し静かになるトマト。",
+    image: "assets/images/crops/luna-tomato.png",
     visual: "aroma",
     stats: { size: 5, sweetness: 7, aroma: 8, vitality: 4, rarity: 1 },
     environmentYield: { oxygen: 2, water: 6, nitrogen: 1 }
   },
   beans: {
+    no: 3,
     name: "ソイルビーンズ",
     desc: "窒素を増やしやすい土づくり作物",
+    flavor: "小さな畑の土をふかふかにしてくれる、働き者の豆。",
+    image: "assets/images/crops/soil-beans.png",
     visual: "rarity",
     stats: { size: 4, sweetness: 4, aroma: 3, vitality: 6, rarity: 2 },
     environmentYield: { oxygen: 2, water: 2, nitrogen: 6 }
   }
 };
 
+const cropDexOrder = ["carrot", "tomato", "beans"];
 const baseSeed = createBaseSeed("carrot");
 
 const stageRules = [
@@ -326,6 +336,7 @@ let audioContext = null;
 let pendingSellId = null;
 let activeDeliveryId = null;
 let activeParentSlot = null;
+let pendingDiscoveryName = null;
 let bgmTimer = null;
 let bgmMode = null;
 let introIndex = 0;
@@ -365,6 +376,8 @@ const els = {
   unlockList: document.querySelector("#unlockList"),
   storageList: document.querySelector("#storageList"),
   storageCount: document.querySelector("#storageCount"),
+  dexList: document.querySelector("#dexList"),
+  dexCount: document.querySelector("#dexCount"),
   sellAllBtn: document.querySelector("#sellAllBtn"),
   seedName: document.querySelector("#seedName"),
   parentA: document.querySelector("#parentA"),
@@ -471,6 +484,7 @@ function loadState() {
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0 },
     stats: { totalHarvested: 0, totalBred: 0, totalSold: 0 },
     profile: { playerName: "開拓者", planetName: "名もなき小惑星", introSeen: false },
+    discoveredCrops: {},
     reportedMissions: [],
     completedRequests: [],
     bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0 },
@@ -509,6 +523,7 @@ function normalizeState(raw) {
       planetName: raw.profile?.planetName ?? "名もなき小惑星",
       introSeen: raw.profile?.introSeen ?? hasProgress
     },
+    discoveredCrops: raw.discoveredCrops ?? {},
     reportedMissions: raw.reportedMissions ?? raw.completedMissions ?? [],
     completedRequests: raw.completedRequests ?? [],
     bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0, ...raw.bonuses },
@@ -525,6 +540,16 @@ function normalizeState(raw) {
     id,
     crop: plot.crop ? decorateCrop(plot.crop) : null
   }));
+  normalized.storage.forEach((crop) => {
+    const family = crop.family ?? "carrot";
+    if (cropCatalog[family] && !normalized.discoveredCrops[family]) {
+      normalized.discoveredCrops[family] = {
+        name: crop.name,
+        discoverer: normalized.profile.playerName,
+        discoveredAt: crop.harvestedAt ?? Date.now()
+      };
+    }
+  });
   return normalized;
 }
 
@@ -559,6 +584,31 @@ function createBaseSeed(family) {
     environmentYield: structuredClone(crop.environmentYield),
     stats: structuredClone(crop.stats)
   };
+}
+
+function cropImage(cropOrFamily) {
+  const family = typeof cropOrFamily === "string" ? cropOrFamily : cropOrFamily?.family;
+  return cropCatalog[family]?.image ?? cropCatalog.carrot.image;
+}
+
+function cropImageMarkup(cropOrFamily, className = "crop-art", alt = "") {
+  return `<img class="${className}" src="${cropImage(cropOrFamily)}" alt="${alt}" loading="lazy" draggable="false" />`;
+}
+
+function formatDiscoveryDate(timestamp) {
+  const date = new Date(timestamp || Date.now());
+  return new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+function registerCropDiscovery(crop) {
+  const family = crop.family ?? "carrot";
+  if (!cropCatalog[family] || state.discoveredCrops[family]) return;
+  state.discoveredCrops[family] = {
+    name: crop.name,
+    discoverer: state.profile.playerName,
+    discoveredAt: Date.now()
+  };
+  pendingDiscoveryName = cropCatalog[family].name;
 }
 
 function saveState() {
@@ -644,6 +694,7 @@ function harvest(plotId) {
   state.environment.nitrogen += Math.ceil(crop.environmentYield.nitrogen + crop.stats.rarity * 0.3);
   state.environment.green = Math.min(100, Math.floor((state.environment.oxygen + state.environment.water + state.environment.nitrogen) / 3));
   state.stats.totalHarvested += 1;
+  registerCropDiscovery(crop);
   plot.crop = null;
   return true;
 }
@@ -653,7 +704,9 @@ function harvestAll() {
   if (count) {
     playHarvestSound();
   }
-  setLog(count ? `${count}個の作物を収穫しました。倉庫から売るとコインになります。` : "収穫できる作物はまだありません。");
+  const discoveryText = pendingDiscoveryName ? ` 図鑑に${pendingDiscoveryName}を登録しました。` : "";
+  setLog(count ? `${count}個の作物を収穫しました。倉庫から売るとコインになります。${discoveryText}` : "収穫できる作物はまだありません。");
+  pendingDiscoveryName = null;
   clearInvalidParents();
   saveAndRender();
 }
@@ -973,6 +1026,7 @@ function render() {
   renderMissions();
   renderCoopRequests();
   renderStorage();
+  renderDex();
   renderLab();
   renderDeliveryModal();
 }
@@ -1005,7 +1059,7 @@ function renderSeedPicker() {
     button.className = `seed-card ${selected ? "selected" : ""}`;
     button.type = "button";
     button.innerHTML = `
-      <div class="crop-icon crop-${seed.visual}"></div>
+      ${cropImageMarkup(family, "crop-art seed-art", seed.name)}
       <strong>${seed.name}</strong>
       <span>${cropCatalog[family]?.desc ?? "交配で生まれた種"}</span>
       <small>酸${seed.environmentYield.oxygen} / 水${seed.environmentYield.water} / 窒${seed.environmentYield.nitrogen}</small>
@@ -1037,7 +1091,7 @@ function renderField() {
       const ready = progress >= 1;
       const isSeedling = progress < 0.5;
       button.innerHTML = `
-        <div class="${isSeedling ? "seedling-icon" : `crop-icon crop-${plot.crop.visual}`}"></div>
+        ${ready ? cropImageMarkup(plot.crop, "crop-art plot-art", plot.crop.name) : `<div class="${isSeedling ? "seedling-icon" : `crop-icon crop-${plot.crop.visual}`}"></div>`}
         <div class="plot-name">${ready ? "収穫OK" : isSeedling ? "芽吹き中" : plot.crop.name}</div>
         <div class="progress"><span style="width:${Math.floor(progress * 100)}%"></span></div>
       `;
@@ -1046,7 +1100,9 @@ function renderField() {
           const cropName = plot.crop.name;
           harvest(plot.id);
           playHarvestSound();
-          setLog(`${cropName}をすぽっと収穫しました。`);
+          const discoveryText = pendingDiscoveryName ? ` 図鑑に${pendingDiscoveryName}を登録しました。` : "";
+          setLog(`${cropName}をすぽっと収穫しました。${discoveryText}`);
+          pendingDiscoveryName = null;
           clearInvalidParents();
           saveAndRender();
         } else {
@@ -1205,6 +1261,7 @@ function renderStorage() {
     const confirmingSell = pendingSellId === crop.id;
     item.className = `item${selected ? " selected" : ""}${confirmingSell ? " confirming" : ""}`;
     item.innerHTML = `
+      ${cropImageMarkup(crop, "crop-art item-art", crop.name)}
       <span>
         <span class="item-name">第${crop.generation}世代 ${crop.name}</span>
         <span class="item-stats">
@@ -1222,6 +1279,41 @@ function renderStorage() {
       </div>
     `;
     els.storageList.appendChild(item);
+  });
+}
+
+function renderDex() {
+  const discoveredFamilies = cropDexOrder.filter((family) => state.discoveredCrops[family]);
+  els.dexCount.textContent = `${discoveredFamilies.length}/${cropDexOrder.length}`;
+  els.dexList.innerHTML = "";
+
+  cropDexOrder.forEach((family) => {
+    const catalog = cropCatalog[family];
+    const discovery = state.discoveredCrops[family];
+    const item = document.createElement("article");
+    item.className = `dex-card${discovery ? " discovered" : " locked"}`;
+    item.innerHTML = discovery
+      ? `
+        <div class="dex-image">${cropImageMarkup(family, "crop-art dex-art", catalog.name)}</div>
+        <div class="dex-body">
+          <small>No.${String(catalog.no).padStart(3, "0")}</small>
+          <strong>${catalog.name}</strong>
+          <span>品種名: ${discovery.name}</span>
+          <span>発見者: ${discovery.discoverer}</span>
+          <span>発見日: ${formatDiscoveryDate(discovery.discoveredAt)}</span>
+          <p>${catalog.flavor}</p>
+        </div>
+      `
+      : `
+        <div class="dex-image unknown"></div>
+        <div class="dex-body">
+          <small>No.${String(catalog.no).padStart(3, "0")}</small>
+          <strong>未発見の作物</strong>
+          <span>収穫すると記録されます。</span>
+          <p>この小惑星のどこかで、まだ出会っていない作物が待っています。</p>
+        </div>
+      `;
+    els.dexList.appendChild(item);
   });
 }
 
