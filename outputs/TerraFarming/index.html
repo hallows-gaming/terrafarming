@@ -23,6 +23,25 @@
           </div>
         </section>
 
+        <section id="introScreen" class="intro-screen" aria-label="導入シーン" aria-hidden="true">
+          <div class="intro-card">
+            <p id="introKicker" class="intro-kicker">宇宙開拓局通信</p>
+            <div id="introText" class="intro-text"></div>
+            <form id="introForm" class="intro-form" hidden>
+              <label>
+                <span>あなたの名前</span>
+                <input id="playerNameInput" name="playerName" type="text" maxlength="12" placeholder="例: ハル" autocomplete="name" />
+              </label>
+              <label>
+                <span>開拓する星の名前</span>
+                <input id="planetNameInput" name="planetName" type="text" maxlength="14" placeholder="例: ミドリノ星" autocomplete="off" />
+              </label>
+              <button class="primary wide" type="submit">サインする</button>
+            </form>
+            <button id="introNextBtn" class="primary wide" type="button">つづける</button>
+          </div>
+        </section>
+
         <header class="hud-top">
           <div class="hud-actions">
             <button id="resetBtn" class="icon-button" title="セーブを初期化" aria-label="セーブを初期化">↺</button>
@@ -42,6 +61,7 @@
                 <span id="greenBar"></span>
               </div>
               <small>緑化率 <b id="greenRate">0%</b></small>
+              <small id="profileLabel">開拓者 / 小惑星</small>
             </div>
           </section>
 

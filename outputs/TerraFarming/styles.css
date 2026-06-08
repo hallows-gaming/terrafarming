@@ -90,6 +90,12 @@ p {
   pointer-events: none;
 }
 
+.app.introing .title-screen {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .title-planet {
   position: relative;
   width: 188px;
@@ -122,6 +128,80 @@ p {
   color: var(--deep-green);
   font-size: 0.9rem;
   font-weight: 900;
+}
+
+.intro-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  display: grid;
+  align-items: center;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(121, 167, 200, 0.24), transparent 15rem),
+    linear-gradient(180deg, #f4faf7 0%, #dfece3 100%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.app.introing .intro-screen {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.intro-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(40, 103, 74, 0.16);
+  border-radius: 22px;
+  background: rgba(255, 253, 247, 0.92);
+  box-shadow: 0 18px 36px rgba(31, 42, 36, 0.16);
+}
+
+.intro-kicker {
+  color: var(--deep-green);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.intro-text {
+  color: #2f4036;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.intro-form {
+  display: grid;
+  gap: 12px;
+}
+
+.intro-form[hidden] {
+  display: none;
+}
+
+.intro-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.intro-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(40, 103, 74, 0.2);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
 }
 
 .hud-top {

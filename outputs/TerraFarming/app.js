@@ -304,6 +304,21 @@ const coopRequests = [
   }
 ];
 
+const introScenes = [
+  {
+    kicker: "宇宙歴831年",
+    text: "人類は青い星を飛び出し、暮らしの場所を宇宙へ広げていきました。\n\n大きな惑星だけでなく、名もない小惑星にも、畑と台所と笑い声が少しずつ生まれています。"
+  },
+  {
+    kicker: "宇宙開拓局より",
+    text: "あなたに託されるのは、まだ緑の少ない小さな小惑星です。\n\n野菜を育て、空気と水をふやし、誰かの暮らしに届く農作物を作ってください。"
+  },
+  {
+    kicker: "開拓登録書",
+    text: "では、これから新たな開拓を始めましょう。\n\nこちらの書類にサインをお願いします。"
+  }
+];
+
 const state = loadState();
 let selectedParentA = null;
 let selectedParentB = null;
@@ -312,13 +327,22 @@ let pendingSellId = null;
 let activeDeliveryId = null;
 let bgmTimer = null;
 let bgmMode = null;
+let introIndex = 0;
 
 const els = {
   app: document.querySelector(".app"),
   titleScreen: document.querySelector("#titleScreen"),
+  introScreen: document.querySelector("#introScreen"),
+  introKicker: document.querySelector("#introKicker"),
+  introText: document.querySelector("#introText"),
+  introForm: document.querySelector("#introForm"),
+  introNextBtn: document.querySelector("#introNextBtn"),
+  playerNameInput: document.querySelector("#playerNameInput"),
+  planetNameInput: document.querySelector("#planetNameInput"),
   terraStage: document.querySelector("#terraStage"),
   greenRate: document.querySelector("#greenRate"),
   greenBar: document.querySelector("#greenBar"),
+  profileLabel: document.querySelector("#profileLabel"),
   oxygen: document.querySelector("#oxygen"),
   water: document.querySelector("#water"),
   nitrogen: document.querySelector("#nitrogen"),
@@ -360,8 +384,60 @@ function startGame() {
   if (els.app.classList.contains("started")) return;
   playStartSound();
   stopBgm();
+  if (shouldShowIntro()) {
+    beginIntro();
+    return;
+  }
+  enterGameplay();
+}
+
+function shouldShowIntro() {
+  return !state.profile.introSeen && Math.floor(state.environment.green) === 0;
+}
+
+function beginIntro() {
+  introIndex = 0;
+  els.app.classList.remove("started");
+  els.app.classList.add("introing");
+  renderIntro();
+}
+
+function enterGameplay() {
+  els.app.classList.remove("introing");
   els.app.classList.add("started");
   setTimeout(() => startBgm("play"), 520);
+}
+
+function renderIntro() {
+  const scene = introScenes[introIndex];
+  const isFormScene = introIndex === introScenes.length - 1;
+  els.introKicker.textContent = scene.kicker;
+  els.introText.textContent = scene.text;
+  els.introForm.hidden = !isFormScene;
+  els.introNextBtn.hidden = isFormScene;
+  if (isFormScene) {
+    els.playerNameInput.value = state.profile.playerName === "開拓者" ? "" : state.profile.playerName;
+    els.planetNameInput.value = state.profile.planetName === "名もなき小惑星" ? "" : state.profile.planetName;
+    setTimeout(() => els.playerNameInput.focus(), 80);
+  }
+}
+
+function advanceIntro() {
+  if (introIndex < introScenes.length - 1) {
+    introIndex += 1;
+    renderIntro();
+  }
+}
+
+function completeIntro() {
+  const playerName = els.playerNameInput.value.trim() || "開拓者";
+  const planetName = els.planetNameInput.value.trim() || "テラファーム星";
+  state.profile = { playerName, planetName, introSeen: true };
+  saveState();
+  playRewardSound();
+  setLog(`はい、${playerName}さんですね。これから${planetName}の開拓をよろしくお願いします。良き宇宙ライフを。`);
+  render();
+  enterGameplay();
 }
 
 function loadState() {
@@ -388,6 +464,7 @@ function loadState() {
     resources: { food: 0, coins: 0, terraPoints: 0 },
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0 },
     stats: { totalHarvested: 0, totalBred: 0, totalSold: 0 },
+    profile: { playerName: "開拓者", planetName: "名もなき小惑星", introSeen: false },
     reportedMissions: [],
     completedRequests: [],
     bonuses: { growth: 0, mutation: 0, sale: 0 },
@@ -398,6 +475,19 @@ function loadState() {
 
 function normalizeState(raw) {
   const coins = raw.resources?.coins ?? raw.resources?.minerals ?? 0;
+  const hasProgress = Boolean(
+    raw.profile?.introSeen ||
+      raw.stats?.totalHarvested ||
+      raw.stats?.totalBred ||
+      raw.stats?.totalSold ||
+      raw.environment?.green ||
+      raw.environment?.oxygen ||
+      raw.environment?.water ||
+      raw.environment?.nitrogen ||
+      raw.resources?.coins ||
+      raw.resources?.terraPoints ||
+      raw.storage?.length
+  );
   const normalized = {
     plots: Array.from({ length: MAX_PLOTS }, (_, id) => raw.plots?.[id] ?? { id, crop: null }),
     unlockedPlots: raw.unlockedPlots ?? 4,
@@ -408,6 +498,11 @@ function normalizeState(raw) {
     resources: { food: 0, coins, terraPoints: 0, ...raw.resources, coins },
     environment: { green: 0, oxygen: 0, water: 0, nitrogen: 0, ...raw.environment },
     stats: { totalHarvested: 0, totalBred: 0, totalSold: 0, ...raw.stats },
+    profile: {
+      playerName: raw.profile?.playerName ?? "開拓者",
+      planetName: raw.profile?.planetName ?? "名もなき小惑星",
+      introSeen: raw.profile?.introSeen ?? hasProgress
+    },
     reportedMissions: raw.reportedMissions ?? raw.completedMissions ?? [],
     completedRequests: raw.completedRequests ?? [],
     bonuses: { growth: 0, mutation: 0, sale: 0, ...raw.bonuses },
@@ -855,6 +950,9 @@ function renderStats() {
   if (els.greenBar) {
     els.greenBar.style.width = `${Math.min(100, Math.floor(state.environment.green))}%`;
   }
+  if (els.profileLabel) {
+    els.profileLabel.textContent = `${state.profile.playerName} / ${state.profile.planetName}`;
+  }
   els.oxygen.textContent = state.environment.oxygen;
   els.water.textContent = state.environment.water;
   els.nitrogen.textContent = state.environment.nitrogen;
@@ -973,6 +1071,7 @@ function renderMissions() {
   });
 
   [
+    `開拓証: ${state.profile.playerName} / ${state.profile.planetName}`,
     `${state.unlockedPlots}/9区画の畑を利用可能`,
     `成長速度 +${totalBonus("growth")}%`,
     `売却価格 +${totalBonus("sale")}%`,
@@ -1248,6 +1347,11 @@ els.titleScreen.addEventListener("keydown", (event) => {
     event.preventDefault();
     startGame();
   }
+});
+els.introNextBtn.addEventListener("click", advanceIntro);
+els.introForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  completeIntro();
 });
 
 document.querySelectorAll(".tab").forEach((tab) => {
