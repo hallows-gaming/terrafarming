@@ -47,7 +47,6 @@
             <button id="settingsBtn" class="icon-button image-button" title="設定" aria-label="設定">
               <img src="assets/images/ui/gear-settings.png" alt="" />
             </button>
-            <button id="resetBtn" class="icon-button" title="セーブを初期化" aria-label="セーブを初期化">↺</button>
           </div>
 
           <section class="asteroid" aria-label="小惑星ステータス">
@@ -63,7 +62,7 @@
               <div class="green-meter" aria-label="緑化率">
                 <span id="greenBar"></span>
               </div>
-              <small>緑化率 <b id="greenRate">0%</b></small>
+              <small>緑化率 <b id="greenRate">0%</b> <b id="greenPoints">0/1500</b></small>
               <small id="profileLabel">開拓者 / 小惑星</small>
             </div>
           </section>
@@ -191,6 +190,21 @@
               <span>効果音 <b id="sfxVolumeLabel">50%</b></span>
               <input id="sfxVolumeSlider" type="range" min="0" max="100" step="1" value="50" />
             </label>
+            <div class="settings-danger">
+              <div>
+                <strong>セーブデータ</strong>
+                <span>開拓記録を最初からやり直します。</span>
+              </div>
+              <button id="resetBtn" class="danger-action" type="button">リセット</button>
+            </div>
+            <div id="resetConfirm" class="reset-confirm" hidden>
+              <strong>本当に消しますか？</strong>
+              <p>作物、図鑑、開拓記録など、すべてのセーブデータが消えます。</p>
+              <div class="confirm-actions">
+                <button id="resetCancelBtn" class="mini-action cancel" type="button">やめる</button>
+                <button id="resetConfirmBtn" class="mini-action danger" type="button">すべて消す</button>
+              </div>
+            </div>
           </div>
         </section>
 

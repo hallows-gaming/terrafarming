@@ -29,6 +29,11 @@ const cropCatalog = {
     desc: "酸素を増やしやすい基本作物",
     flavor: "星形の葉に朝露をためる、開拓局おすすめの入門野菜。",
     image: "assets/images/crops/star-carrot.png",
+    stages: {
+      stage1: "assets/images/crops/carrot-stage-1.png",
+      stage2: "assets/images/crops/carrot-stage-2.png",
+      ready: "assets/images/crops/carrot-ready.png"
+    },
     visual: "vitality",
     stats: { size: 6, sweetness: 5, aroma: 4, vitality: 7, rarity: 1 },
     environmentYield: { oxygen: 5, water: 2, nitrogen: 1 }
@@ -39,6 +44,11 @@ const cropCatalog = {
     desc: "水分を増やしやすいみずみずしい作物",
     flavor: "月明かりのようなつやを持つ、食卓が少し静かになるトマト。",
     image: "assets/images/crops/luna-tomato.png",
+    stages: {
+      stage1: "assets/images/crops/tomato-stage-1.png",
+      stage2: "assets/images/crops/tomato-stage-2.png",
+      ready: "assets/images/crops/tomato-ready.png"
+    },
     visual: "aroma",
     stats: { size: 5, sweetness: 7, aroma: 8, vitality: 4, rarity: 1 },
     environmentYield: { oxygen: 2, water: 6, nitrogen: 1 }
@@ -49,6 +59,11 @@ const cropCatalog = {
     desc: "窒素を増やしやすい土づくり作物",
     flavor: "小さな畑の土をふかふかにしてくれる、働き者の豆。",
     image: "assets/images/crops/soil-beans.png",
+    stages: {
+      stage1: "assets/images/crops/beans-stage-1.png",
+      stage2: "assets/images/crops/beans-stage-2.png",
+      ready: "assets/images/crops/beans-ready.png"
+    },
     visual: "rarity",
     stats: { size: 4, sweetness: 4, aroma: 3, vitality: 6, rarity: 2 },
     environmentYield: { oxygen: 2, water: 2, nitrogen: 6 }
@@ -94,7 +109,7 @@ const planetCatalog = {
       { green: 50, plots: 9 }
     ],
     cropFamilies: ["carrot", "tomato", "beans"],
-    greenScale: 1,
+    terraformTargets: { oxygen: 500, water: 500, nitrogen: 500 },
     nextPlanet: "frontier",
     desc: "最初に任された小さな開拓星"
   },
@@ -110,7 +125,7 @@ const planetCatalog = {
       { green: 100, plots: 25 }
     ],
     cropFamilies: ["rice", "potato", "pepper"],
-    greenScale: 0.36,
+    terraformTargets: { oxygen: 2500, water: 3500, nitrogen: 1500 },
     desc: "広い畑を持つ、開拓に時間のかかる新しい星"
   }
 };
@@ -423,6 +438,7 @@ const els = {
   planetNameInput: document.querySelector("#planetNameInput"),
   terraStage: document.querySelector("#terraStage"),
   greenRate: document.querySelector("#greenRate"),
+  greenPoints: document.querySelector("#greenPoints"),
   greenBar: document.querySelector("#greenBar"),
   profileLabel: document.querySelector("#profileLabel"),
   oxygen: document.querySelector("#oxygen"),
@@ -474,7 +490,10 @@ const els = {
   bgmVolumeLabel: document.querySelector("#bgmVolumeLabel"),
   sfxVolumeSlider: document.querySelector("#sfxVolumeSlider"),
   sfxVolumeLabel: document.querySelector("#sfxVolumeLabel"),
-  resetBtn: document.querySelector("#resetBtn")
+  resetBtn: document.querySelector("#resetBtn"),
+  resetConfirm: document.querySelector("#resetConfirm"),
+  resetCancelBtn: document.querySelector("#resetCancelBtn"),
+  resetConfirmBtn: document.querySelector("#resetConfirmBtn")
 };
 let toastTimer = null;
 
@@ -602,7 +621,7 @@ function normalizePlanetState(planetId, planet = {}) {
   const base = createPlanetState(planetId, planet.name);
   const seedBank = { ...base.seedBank, ...planet.seedBank };
   const selectedFamily = seedBank[planet.selectedFamily] ? planet.selectedFamily : base.selectedFamily;
-  return {
+  const normalized = {
     ...base,
     ...planet,
     plots: Array.from({ length: def.maxPlots }, (_, id) => planet.plots?.[id] ?? { id, crop: null }),
@@ -613,6 +632,8 @@ function normalizePlanetState(planetId, planet = {}) {
     environment: { ...base.environment, ...planet.environment },
     reportedMissions: planet.reportedMissions ?? []
   };
+  normalized.environment.green = terraformProgress(normalized.environment, def).percent;
+  return normalized;
 }
 
 function currentPlanetDef() {
@@ -799,6 +820,25 @@ function cropImageMarkup(cropOrFamily, className = "crop-art", alt = "") {
   return `<div class="crop-icon crop-${visual ?? "vitality"} ${className}"></div>`;
 }
 
+function cropStageImage(crop, stage) {
+  return cropCatalog[crop?.family]?.stages?.[stage] ?? cropImage(crop);
+}
+
+function cropStageImageMarkup(crop, stage, className = "crop-art", alt = "") {
+  const image = cropStageImage(crop, stage);
+  return image
+    ? `<img class="${className}" src="${image}" alt="${alt}" loading="eager" draggable="false" />`
+    : cropImageMarkup(crop, className, alt);
+}
+
+function terraformProgress(environment, def = currentPlanetDef()) {
+  const targets = def.terraformTargets ?? { oxygen: 500, water: 500, nitrogen: 500 };
+  const keys = ["oxygen", "water", "nitrogen"];
+  const points = keys.reduce((sum, key) => sum + Math.min(Math.max(0, environment[key] ?? 0), targets[key]), 0);
+  const total = keys.reduce((sum, key) => sum + targets[key], 0);
+  return { points, total, percent: total ? Math.min(100, Math.floor((points / total) * 100)) : 0 };
+}
+
 function formatDiscoveryDate(timestamp) {
   const date = new Date(timestamp || Date.now());
   return new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
@@ -883,11 +923,15 @@ function applyAudioSettings() {
     els.sfxVolumeLabel.textContent = `${state.audioSettings.sfxVolume}%`;
   }
   if (bgmAudio) {
-    bgmAudio.volume = 0.42 * bgmVolumeMultiplier();
+    bgmAudio.volume = Math.min(1, 0.42 * bgmVolumeMultiplier());
+    bgmAudio.muted = bgmVolumeValue() === 0;
   }
 }
 
 function updateAudioSetting(key, value) {
+  if (!state.audioSettings) {
+    state.audioSettings = structuredClone(defaultAudioSettings);
+  }
   state.audioSettings[key] = clampVolume(value);
   applyAudioSettings();
   saveState();
@@ -971,7 +1015,7 @@ function harvest(plotId) {
   state.environment.oxygen += Math.ceil(crop.environmentYield.oxygen + crop.stats.vitality * 0.25);
   state.environment.water += Math.ceil(crop.environmentYield.water + crop.stats.aroma * 0.18);
   state.environment.nitrogen += Math.ceil(crop.environmentYield.nitrogen + crop.stats.rarity * 0.3);
-  state.environment.green = Math.min(100, Math.floor(((state.environment.oxygen + state.environment.water + state.environment.nitrogen) / 3) * currentPlanetDef().greenScale));
+  state.environment.green = terraformProgress(state.environment).percent;
   state.stats.totalHarvested += 1;
   registerCropDiscovery(crop);
   updatePlanetUnlocks();
@@ -1216,8 +1260,24 @@ function openSettings() {
 }
 
 function closeSettings() {
+  cancelReset();
   els.settingsModal.classList.remove("show");
   els.settingsModal.setAttribute("aria-hidden", "true");
+}
+
+function requestReset() {
+  els.resetConfirm.hidden = false;
+  els.resetBtn.disabled = true;
+}
+
+function cancelReset() {
+  els.resetConfirm.hidden = true;
+  els.resetBtn.disabled = false;
+}
+
+function confirmReset() {
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
 }
 
 function deliverRequestCrop(cropId) {
@@ -1327,7 +1387,9 @@ function cropGrowthStage(crop) {
   if (!crop) return "empty";
   const progress = cropProgress(crop);
   if (progress >= 1) return "ready";
-  return progress < 0.5 ? "seedling" : "growing";
+  if (progress < 1 / 3) return "seedling";
+  if (progress < 2 / 3) return "stage1";
+  return "stage2";
 }
 
 function renderTick() {
@@ -1356,10 +1418,13 @@ function renderTick() {
 }
 
 function renderStats() {
+  const terraform = terraformProgress(state.environment);
+  state.environment.green = terraform.percent;
   els.terraStage.textContent = terraStageName();
-  els.greenRate.textContent = `${Math.floor(state.environment.green)}%`;
+  els.greenRate.textContent = `${terraform.percent}%`;
+  els.greenPoints.textContent = `${terraform.points}/${terraform.total}`;
   if (els.greenBar) {
-    els.greenBar.style.width = `${Math.min(100, Math.floor(state.environment.green))}%`;
+    els.greenBar.style.width = `${terraform.percent}%`;
   }
   if (els.profileLabel) {
     els.profileLabel.textContent = `${state.profile.playerName} / ${currentPlanet().name}`;
@@ -1381,6 +1446,7 @@ function renderPlanets() {
   Object.values(planetCatalog).forEach((def) => {
     const unlocked = state.unlockedPlanets.includes(def.id);
     const planet = state.planets[def.id] ?? createPlanetState(def.id, def.id === HOME_PLANET_ID ? state.profile.planetName : def.fallbackName);
+    const terraform = terraformProgress(planet.environment, def);
     const completable = canCompletePlanet(def.id);
     const item = document.createElement("div");
     item.className = `planet-route ${state.activePlanetId === def.id ? "active" : ""}${unlocked || completable ? "" : " locked"}${completable ? " ready" : ""}`;
@@ -1388,7 +1454,7 @@ function renderPlanets() {
       <div>
         <strong>${planet.name}</strong>
         <span>${def.desc}</span>
-        <small>緑化率 ${Math.floor(planet.environment.green)}% / 畑 ${planet.unlockedPlots}/${def.maxPlots}${completable ? " / 開拓達成できます" : ""}</small>
+        <small>緑化率 ${terraform.percent}% (${terraform.points}/${terraform.total}) / 畑 ${planet.unlockedPlots}/${def.maxPlots}${completable ? " / 開拓達成できます" : ""}</small>
       </div>
       <button class="mini-action" ${
         completable ? `data-complete-planet="${def.id}"` : unlocked && state.activePlanetId !== def.id ? `data-planet="${def.id}"` : "disabled"
@@ -1443,14 +1509,15 @@ function renderField() {
       button.addEventListener("click", () => plant(plot.id));
     } else {
       const progress = cropProgress(plot.crop);
-      const ready = progress >= 1;
-      const isSeedling = progress < 0.5;
-      const growthStage = ready ? "ready" : isSeedling ? "seedling" : "growing";
+      const growthStage = cropGrowthStage(plot.crop);
+      const ready = growthStage === "ready";
+      const isSeedling = growthStage === "seedling";
+      const stageImage = growthStage === "stage1" ? "stage1" : growthStage === "stage2" ? "stage2" : "ready";
       button.dataset.cropId = plot.crop.id;
       button.dataset.growthStage = growthStage;
       button.innerHTML = `
-        ${ready ? cropImageMarkup(plot.crop, "crop-art plot-art", plot.crop.name) : `<div class="${isSeedling ? "seedling-icon" : `crop-icon crop-${plot.crop.visual}`}"></div>`}
-        <div class="plot-name">${ready ? "収穫OK" : isSeedling ? "芽吹き中" : plot.crop.name}</div>
+        ${isSeedling ? `<img class="crop-art plot-art" src="assets/images/crops/common-sprout.png" alt="芽" draggable="false" />` : cropStageImageMarkup(plot.crop, stageImage, "crop-art plot-art", plot.crop.name)}
+        <div class="plot-name">${ready ? "収穫OK" : isSeedling ? "芽吹き中" : growthStage === "stage1" ? "成長中" : "もうすぐ収穫"}</div>
         <div class="progress"><span style="width:${Math.floor(progress * 100)}%"></span></div>
       `;
       button.addEventListener("click", () => {
@@ -1847,13 +1914,16 @@ function playBgmPattern(mode) {
 function startAudioBgm(mode) {
   const track = musicTracks[mode];
   if (!track?.src) return false;
-  if (bgmMode === mode && bgmAudio && !bgmAudio.paused) return true;
+  if (bgmMode === mode && bgmAudio && !bgmAudio.paused) {
+    applyAudioSettings();
+    return true;
+  }
 
   stopBgm();
   bgmMode = mode;
   bgmAudio = new Audio(track.src);
   bgmAudio.loop = true;
-  bgmAudio.volume = 0.42 * bgmVolumeMultiplier();
+  applyAudioSettings();
   bgmAudio.play().catch(() => {
     setLog("BGMは画面をタップすると再生されます。");
   });
@@ -2006,6 +2076,7 @@ els.bgmVolumeSlider.addEventListener("input", (event) => {
 els.sfxVolumeSlider.addEventListener("input", (event) => {
   updateAudioSetting("sfxVolume", event.target.value);
 });
+els.sfxVolumeSlider.addEventListener("change", playRewardSound);
 
 els.storageList.addEventListener("click", (event) => {
   const sellButton = event.target.closest("[data-sell]");
@@ -2034,10 +2105,9 @@ els.labCropList.addEventListener("click", (event) => {
     selectParent(button.dataset.parentCrop);
   }
 });
-els.resetBtn.addEventListener("click", () => {
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
-});
+els.resetBtn.addEventListener("click", requestReset);
+els.resetCancelBtn.addEventListener("click", cancelReset);
+els.resetConfirmBtn.addEventListener("click", confirmReset);
 
 applyAudioSettings();
 render();

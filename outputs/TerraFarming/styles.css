@@ -1293,6 +1293,65 @@ body[data-stage="緑の星"] .planet-core {
   accent-color: var(--green);
 }
 
+.settings-danger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(122, 52, 42, 0.18);
+}
+
+.settings-danger div {
+  display: grid;
+  gap: 3px;
+}
+
+.settings-danger strong,
+.reset-confirm strong {
+  color: #76362f;
+  font-size: 0.9rem;
+}
+
+.settings-danger span,
+.reset-confirm p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.danger-action,
+.mini-action.danger {
+  border-color: #b55d50;
+  background: #a94f44;
+  color: white;
+}
+
+.danger-action {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.reset-confirm {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid rgba(169, 79, 68, 0.35);
+  border-radius: 8px;
+  background: #fff4f1;
+}
+
+.reset-confirm[hidden] {
+  display: none;
+}
+
+.reset-confirm .confirm-actions {
+  margin-top: 2px;
+}
+
 .delivery-note {
   margin: -4px 0 12px;
   color: var(--muted);
