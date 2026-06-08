@@ -3,6 +3,15 @@ const GROWTH_MS = 45 * 1000;
 const HOME_PLANET_ID = "home";
 const SOUND_VOLUME = 2.6;
 
+const musicTracks = {
+  play: {
+    src: "assets/audio/gameplay.mp3",
+    title: "わん泊二日",
+    source: "DOVA-SYNDROME",
+    creditRequired: false
+  }
+};
+
 const statLabels = {
   size: "大",
   sweetness: "甘",
@@ -397,6 +406,7 @@ let activeParentSlot = null;
 let pendingDiscoveryName = null;
 let bgmTimer = null;
 let bgmMode = null;
+let bgmAudio = null;
 let introIndex = 0;
 
 const els = {
@@ -1765,7 +1775,24 @@ function playBgmPattern(mode) {
   tone(196, 1.42, 1.25, "sine", 0.0024 * SOUND_VOLUME);
 }
 
+function startAudioBgm(mode) {
+  const track = musicTracks[mode];
+  if (!track?.src) return false;
+  if (bgmMode === mode && bgmAudio && !bgmAudio.paused) return true;
+
+  stopBgm();
+  bgmMode = mode;
+  bgmAudio = new Audio(track.src);
+  bgmAudio.loop = true;
+  bgmAudio.volume = 0.42;
+  bgmAudio.play().catch(() => {
+    setLog("BGMは画面をタップすると再生されます。");
+  });
+  return true;
+}
+
 function startBgm(mode) {
+  if (startAudioBgm(mode)) return;
   if (bgmMode === mode && bgmTimer) return;
   stopBgm();
   bgmMode = mode;
@@ -1774,6 +1801,11 @@ function startBgm(mode) {
 }
 
 function stopBgm() {
+  if (bgmAudio) {
+    bgmAudio.pause();
+    bgmAudio.currentTime = 0;
+    bgmAudio = null;
+  }
   if (bgmTimer) {
     clearInterval(bgmTimer);
     bgmTimer = null;
