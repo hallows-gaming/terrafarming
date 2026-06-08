@@ -12,6 +12,8 @@ const musicTracks = {
   }
 };
 
+const defaultAudioSettings = { bgmVolume: 50, sfxVolume: 50 };
+
 const statLabels = {
   size: "大",
   sweetness: "甘",
@@ -465,6 +467,13 @@ const els = {
   deliveryNote: document.querySelector("#deliveryNote"),
   deliveryCropList: document.querySelector("#deliveryCropList"),
   deliveryCloseBtn: document.querySelector("#deliveryCloseBtn"),
+  settingsBtn: document.querySelector("#settingsBtn"),
+  settingsModal: document.querySelector("#settingsModal"),
+  settingsCloseBtn: document.querySelector("#settingsCloseBtn"),
+  bgmVolumeSlider: document.querySelector("#bgmVolumeSlider"),
+  bgmVolumeLabel: document.querySelector("#bgmVolumeLabel"),
+  sfxVolumeSlider: document.querySelector("#sfxVolumeSlider"),
+  sfxVolumeLabel: document.querySelector("#sfxVolumeLabel"),
   resetBtn: document.querySelector("#resetBtn")
 };
 let toastTimer = null;
@@ -564,6 +573,7 @@ function loadState() {
     unlockedPlanets: [HOME_PLANET_ID],
     plantedCrops: {},
     planets: {},
+    audioSettings: structuredClone(defaultAudioSettings),
     bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0 },
     upgradeLevels: { greenhouse: 0, shipping: 0, geneMemo: 0 },
     lastSeen: Date.now()
@@ -690,6 +700,7 @@ function normalizeState(raw) {
     },
     discoveredCrops: raw.discoveredCrops ?? {},
     plantedCrops: raw.plantedCrops ?? {},
+    audioSettings: { ...defaultAudioSettings, ...raw.audioSettings },
     reportedMissions: raw.reportedMissions ?? raw.completedMissions ?? [],
     completedRequests: raw.completedRequests ?? [],
     bonuses: { growth: 0, mutation: 0, sale: 0, breeding: 0, ...raw.bonuses },
@@ -835,6 +846,51 @@ function saveState() {
   syncRootToActivePlanet();
   state.lastSeen = Date.now();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function clampVolume(value) {
+  return Math.max(0, Math.min(100, Number(value) || 0));
+}
+
+function bgmVolumeValue() {
+  return clampVolume(state.audioSettings?.bgmVolume ?? defaultAudioSettings.bgmVolume);
+}
+
+function sfxVolumeValue() {
+  return clampVolume(state.audioSettings?.sfxVolume ?? defaultAudioSettings.sfxVolume);
+}
+
+function bgmVolumeMultiplier() {
+  return bgmVolumeValue() / 100;
+}
+
+function sfxVolumeMultiplier() {
+  return sfxVolumeValue() / 50;
+}
+
+function applyAudioSettings() {
+  if (!state.audioSettings) {
+    state.audioSettings = structuredClone(defaultAudioSettings);
+  }
+  state.audioSettings.bgmVolume = bgmVolumeValue();
+  state.audioSettings.sfxVolume = sfxVolumeValue();
+  if (els.bgmVolumeSlider) {
+    els.bgmVolumeSlider.value = state.audioSettings.bgmVolume;
+    els.bgmVolumeLabel.textContent = `${state.audioSettings.bgmVolume}%`;
+  }
+  if (els.sfxVolumeSlider) {
+    els.sfxVolumeSlider.value = state.audioSettings.sfxVolume;
+    els.sfxVolumeLabel.textContent = `${state.audioSettings.sfxVolume}%`;
+  }
+  if (bgmAudio) {
+    bgmAudio.volume = 0.42 * bgmVolumeMultiplier();
+  }
+}
+
+function updateAudioSetting(key, value) {
+  state.audioSettings[key] = clampVolume(value);
+  applyAudioSettings();
+  saveState();
 }
 
 function cropProgress(crop) {
@@ -1151,6 +1207,17 @@ function closeDelivery() {
   activeDeliveryId = null;
   els.deliveryModal.classList.remove("show");
   els.deliveryModal.setAttribute("aria-hidden", "true");
+}
+
+function openSettings() {
+  applyAudioSettings();
+  els.settingsModal.classList.add("show");
+  els.settingsModal.setAttribute("aria-hidden", "false");
+}
+
+function closeSettings() {
+  els.settingsModal.classList.remove("show");
+  els.settingsModal.setAttribute("aria-hidden", "true");
 }
 
 function deliverRequestCrop(cropId) {
@@ -1732,15 +1799,17 @@ function ensureAudio() {
   return audioContext;
 }
 
-function tone(freq, start, duration, type, volume) {
+function tone(freq, start, duration, type, volume, channel = "sfx") {
   const ctx = ensureAudio();
   if (!ctx) return;
+  const adjustedVolume = volume * (channel === "bgm" ? bgmVolumeMultiplier() : sfxVolumeMultiplier());
+  if (adjustedVolume <= 0) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
   gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
-  gain.gain.exponentialRampToValueAtTime(volume, ctx.currentTime + start + 0.01);
+  gain.gain.exponentialRampToValueAtTime(adjustedVolume, ctx.currentTime + start + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + duration);
   osc.connect(gain).connect(ctx.destination);
   osc.start(ctx.currentTime + start);
@@ -1756,8 +1825,8 @@ function playBgmPattern(mode) {
       [784, 1.08],
       [659, 1.55],
       [587, 2.05]
-    ].forEach(([freq, start]) => tone(freq, start, 0.28, "sine", 0.0045 * SOUND_VOLUME));
-    tone(196, 0, 2.55, "triangle", 0.0024 * SOUND_VOLUME);
+    ].forEach(([freq, start]) => tone(freq, start, 0.28, "sine", 0.0045 * SOUND_VOLUME, "bgm"));
+    tone(196, 0, 2.55, "triangle", 0.0024 * SOUND_VOLUME, "bgm");
     return;
   }
 
@@ -1770,9 +1839,9 @@ function playBgmPattern(mode) {
     [392, 1.72],
     [349, 2.1],
     [392, 2.52]
-  ].forEach(([freq, start]) => tone(freq, start, 0.22, "triangle", 0.0038 * SOUND_VOLUME));
-  tone(165, 0, 1.25, "sine", 0.0024 * SOUND_VOLUME);
-  tone(196, 1.42, 1.25, "sine", 0.0024 * SOUND_VOLUME);
+  ].forEach(([freq, start]) => tone(freq, start, 0.22, "triangle", 0.0038 * SOUND_VOLUME, "bgm"));
+  tone(165, 0, 1.25, "sine", 0.0024 * SOUND_VOLUME, "bgm");
+  tone(196, 1.42, 1.25, "sine", 0.0024 * SOUND_VOLUME, "bgm");
 }
 
 function startAudioBgm(mode) {
@@ -1784,7 +1853,7 @@ function startAudioBgm(mode) {
   bgmMode = mode;
   bgmAudio = new Audio(track.src);
   bgmAudio.loop = true;
-  bgmAudio.volume = 0.42;
+  bgmAudio.volume = 0.42 * bgmVolumeMultiplier();
   bgmAudio.play().catch(() => {
     setLog("BGMは画面をタップすると再生されます。");
   });
@@ -1924,6 +1993,20 @@ els.deliveryModal.addEventListener("click", (event) => {
   }
 });
 
+els.settingsBtn.addEventListener("click", openSettings);
+els.settingsCloseBtn.addEventListener("click", closeSettings);
+els.settingsModal.addEventListener("click", (event) => {
+  if (event.target === els.settingsModal) {
+    closeSettings();
+  }
+});
+els.bgmVolumeSlider.addEventListener("input", (event) => {
+  updateAudioSetting("bgmVolume", event.target.value);
+});
+els.sfxVolumeSlider.addEventListener("input", (event) => {
+  updateAudioSetting("sfxVolume", event.target.value);
+});
+
 els.storageList.addEventListener("click", (event) => {
   const sellButton = event.target.closest("[data-sell]");
   const requestSellButton = event.target.closest("[data-sell-request]");
@@ -1956,5 +2039,6 @@ els.resetBtn.addEventListener("click", () => {
   location.reload();
 });
 
+applyAudioSettings();
 render();
 setInterval(renderTick, 1000);

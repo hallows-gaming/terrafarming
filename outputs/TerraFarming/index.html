@@ -44,6 +44,9 @@
 
         <header class="hud-top">
           <div class="hud-actions">
+            <button id="settingsBtn" class="icon-button image-button" title="設定" aria-label="設定">
+              <img src="assets/images/ui/gear-settings.png" alt="" />
+            </button>
             <button id="resetBtn" class="icon-button" title="セーブを初期化" aria-label="セーブを初期化">↺</button>
           </div>
 
@@ -171,6 +174,23 @@
             </div>
             <p id="deliveryNote" class="delivery-note"></p>
             <div id="deliveryCropList" class="delivery-crop-list"></div>
+          </div>
+        </section>
+
+        <section id="settingsModal" class="settings-modal" aria-label="設定" aria-hidden="true">
+          <div class="settings-sheet">
+            <div class="section-head">
+              <h2>設定</h2>
+              <button id="settingsCloseBtn" class="icon-button" type="button" aria-label="閉じる">×</button>
+            </div>
+            <label class="volume-control">
+              <span>BGM <b id="bgmVolumeLabel">50%</b></span>
+              <input id="bgmVolumeSlider" type="range" min="0" max="100" step="1" value="50" />
+            </label>
+            <label class="volume-control">
+              <span>効果音 <b id="sfxVolumeLabel">50%</b></span>
+              <input id="sfxVolumeSlider" type="range" min="0" max="100" step="1" value="50" />
+            </label>
           </div>
         </section>
 
