@@ -514,9 +514,20 @@ const els = {
 let toastTimer = null;
 
 function startGame() {
-  if (els.app.classList.contains("started")) return;
+  if (
+    els.app.classList.contains("started") ||
+    els.titleScreen.classList.contains("launching")
+  ) return;
   playStartSound();
   stopBgm();
+  els.titleScreen.classList.add("launching");
+  els.titleScreen.setAttribute("aria-busy", "true");
+  setTimeout(finishTitleLaunch, 1480);
+}
+
+function finishTitleLaunch() {
+  els.titleScreen.classList.remove("launching");
+  els.titleScreen.removeAttribute("aria-busy");
   if (shouldShowIntro()) {
     beginIntro();
     return;
