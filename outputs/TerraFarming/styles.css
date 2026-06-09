@@ -153,7 +153,7 @@ p {
 
 .title-logo-wrap {
   position: absolute;
-  top: 6.5%;
+  top: 41.25%;
   left: 50%;
   z-index: 4;
   width: 94%;
@@ -273,11 +273,11 @@ p {
 
 .launch-pad {
   position: absolute;
-  bottom: 18.5%;
-  left: 50%;
+  top: calc(41.25% + 37px);
+  left: 54%;
   z-index: 5;
-  width: 96px;
-  height: 178px;
+  width: 68px;
+  height: 106px;
   pointer-events: none;
   transform: translateX(-50%);
 }
@@ -290,13 +290,14 @@ p {
   height: 106px;
   object-fit: contain;
   filter: drop-shadow(0 8px 5px rgba(28, 19, 23, 0.5));
+  opacity: 0;
   transform: translateX(-50%);
   transform-origin: 50% 80%;
 }
 
 .launch-glow {
   position: absolute;
-  bottom: -4px;
+  bottom: -8px;
   left: 50%;
   width: 66px;
   height: 22px;
@@ -321,7 +322,7 @@ p {
 
 .launch-smoke {
   position: absolute;
-  bottom: -3px;
+  bottom: -10px;
   left: 50%;
   width: 24px;
   height: 16px;
@@ -420,11 +421,11 @@ p {
 }
 
 @keyframes rocketLaunch {
-  0% { transform: translateX(-50%) translateY(0) rotate(0); }
-  10% { transform: translateX(-52%) translateY(-2px) rotate(-1deg); }
-  18% { transform: translateX(-48%) translateY(-7px) rotate(1deg); }
-  28% { transform: translateX(-50%) translateY(-18px) rotate(0); }
-  100% { transform: translateX(-50%) translateY(-830px) scale(0.62); }
+  0% { opacity: 1; transform: translateX(-50%) translateY(0) rotate(0); }
+  10% { opacity: 1; transform: translateX(-52%) translateY(-2px) rotate(-1deg); }
+  18% { opacity: 1; transform: translateX(-48%) translateY(-7px) rotate(1deg); }
+  28% { opacity: 1; transform: translateX(-50%) translateY(-18px) rotate(0); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(-830px) scale(0.62); }
 }
 
 @keyframes flameLaunch {
