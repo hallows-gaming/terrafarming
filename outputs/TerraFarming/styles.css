@@ -417,7 +417,11 @@ p {
 }
 
 .title-screen.launching {
-  animation: backgroundLaunch 1.48s ease-in forwards;
+  box-shadow: inset 0 -90px 90px rgba(255, 132, 54, 0.18);
+  transition:
+    box-shadow 240ms ease,
+    opacity 360ms ease,
+    visibility 360ms ease;
 }
 
 @keyframes titleTwinkle {
@@ -456,12 +460,6 @@ p {
 
 @keyframes planetDrop {
   to { transform: translateY(18px) scale(1.015); filter: brightness(0.72); }
-}
-
-@keyframes backgroundLaunch {
-  to {
-    background-size: auto 114%;
-  }
 }
 
 .intro-screen {
