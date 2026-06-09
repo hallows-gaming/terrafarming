@@ -82,6 +82,10 @@ p {
   transition: opacity 360ms ease, visibility 360ms ease;
 }
 
+.title-screen.terraformed {
+  background-image: url("assets/title-background-terraformed.png");
+}
+
 .app.started .title-screen {
   opacity: 0;
   visibility: hidden;

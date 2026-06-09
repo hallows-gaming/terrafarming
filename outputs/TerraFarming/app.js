@@ -1529,6 +1529,7 @@ function saveAndRender() {
 }
 
 function render() {
+  renderTitleBackground();
   renderStats();
   renderSeedPicker();
   renderField();
@@ -1540,6 +1541,12 @@ function render() {
   renderDex();
   renderLab();
   renderDeliveryModal();
+}
+
+function renderTitleBackground() {
+  const homePlanet = state.planets[HOME_PLANET_ID];
+  const homeProgress = terraformProgress(homePlanet?.environment ?? {}, planetCatalog[HOME_PLANET_ID]);
+  els.titleScreen.classList.toggle("terraformed", homeProgress.percent >= 100);
 }
 
 function cropGrowthStage(crop) {
