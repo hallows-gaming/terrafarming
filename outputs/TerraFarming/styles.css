@@ -175,12 +175,12 @@ p {
 
 .title-world {
   position: absolute;
-  right: -27%;
-  bottom: -26%;
-  left: -27%;
+  right: -5%;
+  bottom: -24.3%;
+  left: -5%;
   z-index: 1;
   height: 68%;
-  border-radius: 50% 50% 0 0 / 43% 43% 0 0;
+  border-radius: 50% 50% 0 0 / 3% 3% 0 0;
   background:
     linear-gradient(180deg, rgba(218, 125, 68, 0.34), transparent 5%),
     radial-gradient(ellipse at 33% 25%, #aa6c4b 0 5%, transparent 5.5%),
