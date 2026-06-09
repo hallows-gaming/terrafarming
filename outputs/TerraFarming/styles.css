@@ -67,6 +67,7 @@ p {
 }
 
 .title-screen {
+  --title-logo-top: 49.15%;
   position: absolute;
   inset: 0;
   z-index: 20;
@@ -153,7 +154,7 @@ p {
 
 .title-logo-wrap {
   position: absolute;
-  top: 41.25%;
+  top: var(--title-logo-top);
   left: 50%;
   z-index: 4;
   width: 94%;
@@ -274,7 +275,7 @@ p {
 
 .launch-pad {
   position: absolute;
-  top: calc(41.25% + 37px);
+  top: calc(var(--title-logo-top) + 37px);
   left: 54%;
   z-index: 5;
   width: 68px;
