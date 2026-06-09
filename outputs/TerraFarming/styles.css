@@ -72,9 +72,8 @@ p {
   z-index: 20;
   overflow: hidden;
   background:
-    radial-gradient(circle at 76% 18%, rgba(76, 116, 175, 0.3), transparent 24%),
-    radial-gradient(circle at 22% 36%, rgba(70, 164, 170, 0.13), transparent 28%),
-    linear-gradient(180deg, #071026 0%, #0b1733 48%, #18233c 100%);
+    url("assets/title-background-illustrated.png") center top / auto 112% no-repeat,
+    #071026;
   color: white;
   text-align: center;
   cursor: pointer;
@@ -98,6 +97,7 @@ p {
   position: absolute;
   inset: 0 0 43%;
   overflow: hidden;
+  display: none;
 }
 
 .title-space::before,
@@ -190,6 +190,7 @@ p {
   box-shadow:
     0 -8px 24px rgba(234, 137, 80, 0.28),
     inset 0 24px 48px rgba(223, 137, 82, 0.14);
+  display: none;
 }
 
 .planet-haze {
@@ -407,7 +408,11 @@ p {
 }
 
 .title-screen.launching .title-world {
-  animation: planetDrop 1.48s ease-in forwards;
+  animation: none;
+}
+
+.title-screen.launching {
+  animation: backgroundLaunch 1.48s ease-in forwards;
 }
 
 @keyframes titleTwinkle {
@@ -446,6 +451,12 @@ p {
 
 @keyframes planetDrop {
   to { transform: translateY(18px) scale(1.015); filter: brightness(0.72); }
+}
+
+@keyframes backgroundLaunch {
+  to {
+    background-size: auto 114%;
+  }
 }
 
 .intro-screen {
