@@ -401,7 +401,7 @@ p {
 
 .title-screen.launching .launch-glow {
   opacity: 1;
-  animation: flameLaunch 1.2s ease-in forwards;
+  animation: flameLaunch 1.48s cubic-bezier(0.36, 0.02, 0.78, 0.38) forwards;
 }
 
 .title-screen.launching .launch-smoke {
@@ -443,9 +443,12 @@ p {
 }
 
 @keyframes flameLaunch {
-  0% { transform: translateX(-50%) scale(0.55); opacity: 0; }
-  18% { transform: translateX(-50%) scale(1); opacity: 1; }
-  100% { transform: translateX(-50%) translateY(-520px) scale(0.75); opacity: 0; }
+  0% { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.55); }
+  10% { opacity: 1; transform: translateX(-52%) translateY(-2px) scale(0.8); }
+  18% { opacity: 1; transform: translateX(-48%) translateY(-7px) scale(1); }
+  28% { opacity: 1; transform: translateX(-50%) translateY(-18px) scale(1); }
+  82% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-830px) scale(0.62); }
 }
 
 @keyframes launchSmoke {
