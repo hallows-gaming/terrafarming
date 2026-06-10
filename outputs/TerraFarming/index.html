@@ -128,22 +128,106 @@
             </div>
           </section>
 
-          <section id="cropPanel" class="panel management-panel" aria-label="作物">
-            <div class="section-head">
-              <h2>作物</h2>
-              <span>倉庫と図鑑</span>
+          <section id="cropPanel" class="panel management-panel workspace-panel" aria-label="作物">
+            <header class="workspace-header">
+              <button id="cropBackBtn" class="workspace-back is-hidden" type="button" aria-label="作物ホームへ戻る" aria-hidden="true" tabindex="-1">‹</button>
+              <div>
+                <span>作物管理</span>
+                <h2 id="cropWorkspaceTitle">作物</h2>
+              </div>
+              <span class="workspace-header-spacer" aria-hidden="true"></span>
+            </header>
+
+            <div id="cropHomeView" class="workspace-view active" data-crop-view="home">
+              <div class="crop-home-summary">
+                <div>
+                  <span>倉庫</span>
+                  <strong id="cropHomeStorageCount">0個</strong>
+                </div>
+                <div>
+                  <span>図鑑</span>
+                  <strong id="cropHomeDexCount">0/6</strong>
+                </div>
+                <div>
+                  <span>利用できる種</span>
+                  <strong id="cropHomeSeedCount">1種</strong>
+                </div>
+              </div>
+
+              <div class="workspace-menu" aria-label="作物の機能">
+                <button class="workspace-menu-item storage" type="button" data-open-crop-view="storage">
+                  <span class="workspace-menu-icon" aria-hidden="true">箱</span>
+                  <span><strong>倉庫</strong><small>収穫物の確認と個別売却</small></span>
+                  <b>›</b>
+                </button>
+                <button class="workspace-menu-item seeds" type="button" data-open-crop-view="seeds">
+                  <span class="workspace-menu-icon" aria-hidden="true">種</span>
+                  <span><strong>種・品種</strong><small>植える種と世代を管理</small></span>
+                  <b>›</b>
+                </button>
+                <button class="workspace-menu-item dex" type="button" data-open-crop-view="dex">
+                  <span class="workspace-menu-icon" aria-hidden="true">図</span>
+                  <span><strong>作物図鑑</strong><small>発見した作物の記録</small></span>
+                  <b>›</b>
+                </button>
+                <button class="workspace-menu-item shipping" type="button" data-open-crop-view="shipping">
+                  <span class="workspace-menu-icon" aria-hidden="true">出</span>
+                  <span><strong>出荷</strong><small>倉庫の作物をまとめて売却</small></span>
+                  <b>›</b>
+                </button>
+              </div>
+
+              <section class="crop-home-recent" aria-labelledby="recentCropTitle">
+                <div class="section-head compact">
+                  <h2 id="recentCropTitle">最近の収穫</h2>
+                  <span>新しい順に3件</span>
+                </div>
+                <div id="recentCropList" class="recent-crop-list"></div>
+              </section>
             </div>
-            <div class="section-head compact">
-              <h2>倉庫</h2>
-              <span id="storageCount">0個</span>
+
+            <div id="cropStorageView" class="workspace-view" data-crop-view="storage" hidden>
+              <div class="view-summary">
+                <span>倉庫にある収穫物</span>
+                <strong id="storageCount">0個</strong>
+              </div>
+              <div id="storageList" class="list empty"></div>
             </div>
-            <button id="sellAllBtn" class="secondary wide">すべて売る</button>
-            <div id="storageList" class="list empty"></div>
-            <div class="section-head compact unlock-head">
-              <h2>作物図鑑</h2>
-              <span id="dexCount">0/3</span>
+
+            <div id="cropSeedsView" class="workspace-view" data-crop-view="seeds" hidden>
+              <div class="view-summary">
+                <span>現在選択中</span>
+                <strong id="managedSeedName">スターキャロット</strong>
+              </div>
+              <div id="seedLibraryList" class="seed-library-list"></div>
             </div>
-            <div id="dexList" class="dex-list"></div>
+
+            <div id="cropDexView" class="workspace-view" data-crop-view="dex" hidden>
+              <div class="dex-toolbar">
+                <div class="view-summary">
+                  <span>発見した作物</span>
+                  <strong id="dexCount">0/6</strong>
+                </div>
+                <div class="dex-filters" role="tablist" aria-label="図鑑の季節">
+                  <button class="dex-filter active" type="button" data-dex-filter="all">すべて</button>
+                  <button class="dex-filter" type="button" data-dex-filter="spring">春</button>
+                  <button class="dex-filter" type="button" data-dex-filter="summer">夏</button>
+                  <button class="dex-filter" type="button" data-dex-filter="autumn">秋</button>
+                  <button class="dex-filter" type="button" data-dex-filter="winter">冬</button>
+                </div>
+              </div>
+              <div id="dexList" class="dex-list"></div>
+            </div>
+
+            <div id="cropShippingView" class="workspace-view" data-crop-view="shipping" hidden>
+              <div class="shipping-total">
+                <span>出荷予定</span>
+                <strong><b id="shippingCount">0個</b><b id="shippingValue">0C</b></strong>
+              </div>
+              <button id="sellAllBtn" class="primary wide">倉庫の作物をすべて出荷</button>
+              <p class="shipping-note">お気に入り・保護機能は今後追加予定です。現在は倉庫内の作物をすべて出荷します。</p>
+              <div id="shippingList" class="shipping-list"></div>
+            </div>
           </section>
 
           <section id="townPanel" class="panel management-panel" aria-label="街">

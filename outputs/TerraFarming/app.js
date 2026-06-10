@@ -98,6 +98,12 @@ const cropCatalog = {
 };
 
 const cropDexOrder = ["carrot", "tomato", "beans", "rice", "potato", "pepper"];
+const cropDexSeasons = {
+  spring: ["carrot", "tomato", "beans"],
+  summer: ["rice", "potato", "pepper"],
+  autumn: [],
+  winter: []
+};
 const seedLicenses = {
   home: {
     carrot: { cost: 0, unlock: 0, initial: true, reason: "開拓局おすすめの入門作物です。" },
@@ -439,9 +445,14 @@ let bgmTimer = null;
 let bgmMode = null;
 let bgmAudio = null;
 let introIndex = 0;
+let activeTab = "field";
+let activeCropView = "home";
+let activeDexFilter = "all";
+const screenScrollPositions = new Map();
 
 const els = {
   app: document.querySelector(".app"),
+  screenStack: document.querySelector(".screen-stack"),
   titleScreen: document.querySelector("#titleScreen"),
   introScreen: document.querySelector("#introScreen"),
   introKicker: document.querySelector("#introKicker"),
@@ -480,8 +491,19 @@ const els = {
   unlockList: document.querySelector("#unlockList"),
   storageList: document.querySelector("#storageList"),
   storageCount: document.querySelector("#storageCount"),
+  cropBackBtn: document.querySelector("#cropBackBtn"),
+  cropWorkspaceTitle: document.querySelector("#cropWorkspaceTitle"),
+  cropHomeStorageCount: document.querySelector("#cropHomeStorageCount"),
+  cropHomeDexCount: document.querySelector("#cropHomeDexCount"),
+  cropHomeSeedCount: document.querySelector("#cropHomeSeedCount"),
+  recentCropList: document.querySelector("#recentCropList"),
+  managedSeedName: document.querySelector("#managedSeedName"),
+  seedLibraryList: document.querySelector("#seedLibraryList"),
   dexList: document.querySelector("#dexList"),
   dexCount: document.querySelector("#dexCount"),
+  shippingCount: document.querySelector("#shippingCount"),
+  shippingValue: document.querySelector("#shippingValue"),
+  shippingList: document.querySelector("#shippingList"),
   sellAllBtn: document.querySelector("#sellAllBtn"),
   seedName: document.querySelector("#seedName"),
   parentA: document.querySelector("#parentA"),
@@ -1528,6 +1550,70 @@ function saveAndRender() {
   render();
 }
 
+function currentScreenKey() {
+  return activeTab === "crop" ? `crop:${activeCropView}` : `tab:${activeTab}`;
+}
+
+function saveScreenScroll() {
+  screenScrollPositions.set(currentScreenKey(), els.screenStack.scrollTop);
+}
+
+function restoreScreenScroll(key, reset = false) {
+  const nextScroll = reset ? 0 : screenScrollPositions.get(key) ?? 0;
+  requestAnimationFrame(() => {
+    els.screenStack.scrollTop = nextScroll;
+  });
+}
+
+function switchMainTab(tabName) {
+  if (!document.querySelector(`#${tabName}Panel`)) return;
+  saveScreenScroll();
+  activeTab = tabName;
+  els.app.dataset.activeTab = tabName;
+
+  document.querySelectorAll(".tab").forEach((tab) => {
+    const selected = tab.dataset.tab === tabName;
+    tab.classList.toggle("active", selected);
+    tab.setAttribute("aria-current", selected ? "page" : "false");
+  });
+  document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("active"));
+  document.querySelector(`#${tabName}Panel`).classList.add("active");
+
+  if (tabName === "crop") {
+    setCropView("home", { preserveCurrent: false, resetScroll: false });
+    return;
+  }
+  restoreScreenScroll(`tab:${tabName}`);
+}
+
+function setCropView(viewName, options = {}) {
+  const { preserveCurrent = true, resetScroll = false } = options;
+  const target = document.querySelector(`[data-crop-view="${viewName}"]`);
+  if (!target) return;
+  if (preserveCurrent) saveScreenScroll();
+
+  activeCropView = viewName;
+  const titles = {
+    home: "作物",
+    storage: "倉庫",
+    seeds: "種・品種",
+    dex: "作物図鑑",
+    shipping: "出荷"
+  };
+  els.cropWorkspaceTitle.textContent = titles[viewName] ?? "作物";
+  const isHome = viewName === "home";
+  els.cropBackBtn.classList.toggle("is-hidden", isHome);
+  els.cropBackBtn.setAttribute("aria-hidden", isHome ? "true" : "false");
+  els.cropBackBtn.tabIndex = isHome ? -1 : 0;
+
+  document.querySelectorAll("[data-crop-view]").forEach((view) => {
+    const selected = view.dataset.cropView === viewName;
+    view.classList.toggle("active", selected);
+    view.hidden = !selected;
+  });
+  restoreScreenScroll(`crop:${viewName}`, resetScroll);
+}
+
 function render() {
   renderTitleBackground();
   renderStats();
@@ -1538,6 +1624,7 @@ function render() {
   renderCoopRequests();
   renderSeedLicenses();
   renderStorage();
+  renderCropWorkspace();
   renderDex();
   renderLab();
   renderDeliveryModal();
@@ -1941,12 +2028,95 @@ function renderStorage() {
   });
 }
 
-function renderDex() {
-  const discoveredFamilies = cropDexOrder.filter((family) => state.discoveredCrops[family]);
-  els.dexCount.textContent = `${discoveredFamilies.length}/${cropDexOrder.length}`;
-  els.dexList.innerHTML = "";
+function renderCropWorkspace() {
+  const discoveredCount = cropDexOrder.filter((family) => state.discoveredCrops[family]).length;
+  const licensedSeeds = Object.entries(state.seedBank).filter(([family]) => hasSeedLicense(family));
+  const totalShippingValue = state.storage.reduce((sum, crop) => sum + saleValue(crop), 0);
 
-  cropDexOrder.forEach((family) => {
+  els.cropHomeStorageCount.textContent = `${state.storage.length}個`;
+  els.cropHomeDexCount.textContent = `${discoveredCount}/${cropDexOrder.length}`;
+  els.cropHomeSeedCount.textContent = `${licensedSeeds.length}種`;
+  els.managedSeedName.textContent = state.seed.name;
+  els.shippingCount.textContent = `${state.storage.length}個`;
+  els.shippingValue.textContent = `${totalShippingValue}C`;
+
+  els.recentCropList.innerHTML = "";
+  state.storage.slice(0, 3).forEach((crop) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "recent-crop";
+    item.dataset.openCropView = "storage";
+    item.innerHTML = `
+      ${cropImageMarkup(crop, "crop-art recent-crop-art", crop.name)}
+      <span>
+        <strong>${crop.name}</strong>
+        <small>第${crop.generation}世代 / ${statSummary(crop.stats)}</small>
+      </span>
+      <b>›</b>
+    `;
+    els.recentCropList.appendChild(item);
+  });
+  if (!state.storage.length) {
+    els.recentCropList.innerHTML = `<p class="workspace-empty">収穫した作物がここに表示されます。</p>`;
+  }
+
+  els.seedLibraryList.innerHTML = "";
+  licensedSeeds.forEach(([family, seed]) => {
+    const selected = family === state.selectedFamily;
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = `seed-library-item${selected ? " selected" : ""}`;
+    item.dataset.manageSeed = family;
+    item.innerHTML = `
+      ${cropImageMarkup(family, "crop-art seed-library-art", seed.name)}
+      <span>
+        <strong>${seed.name}</strong>
+        <small>第${seed.generation}世代 / ${statSummary(seed.stats)}</small>
+      </span>
+      <b>${selected ? "使用中" : "使う"}</b>
+    `;
+    els.seedLibraryList.appendChild(item);
+  });
+
+  els.shippingList.innerHTML = "";
+  state.storage.slice(0, 8).forEach((crop) => {
+    const item = document.createElement("div");
+    item.className = "shipping-item";
+    item.innerHTML = `
+      <span>${crop.name}<small>第${crop.generation}世代</small></span>
+      <strong>${saleValue(crop)}C</strong>
+    `;
+    els.shippingList.appendChild(item);
+  });
+  if (!state.storage.length) {
+    els.shippingList.innerHTML = `<p class="workspace-empty">出荷できる作物がありません。</p>`;
+  } else if (state.storage.length > 8) {
+    const remaining = document.createElement("p");
+    remaining.className = "shipping-more";
+    remaining.textContent = `ほか ${state.storage.length - 8}個`;
+    els.shippingList.appendChild(remaining);
+  }
+}
+
+function renderDex() {
+  const visibleFamilies = activeDexFilter === "all"
+    ? cropDexOrder
+    : cropDexSeasons[activeDexFilter] ?? [];
+  const discoveredFamilies = visibleFamilies.filter((family) => state.discoveredCrops[family]);
+  els.dexCount.textContent = `${discoveredFamilies.length}/${visibleFamilies.length}`;
+  els.dexList.innerHTML = "";
+  document.querySelectorAll("[data-dex-filter]").forEach((button) => {
+    const selected = button.dataset.dexFilter === activeDexFilter;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-selected", selected ? "true" : "false");
+  });
+
+  if (!visibleFamilies.length) {
+    els.dexList.innerHTML = `<p class="workspace-empty">この季節の作物は、今後の惑星で追加されます。</p>`;
+    return;
+  }
+
+  visibleFamilies.forEach((family) => {
     const catalog = cropCatalog[family];
     const discovery = state.discoveredCrops[family];
     const item = document.createElement("article");
@@ -2242,10 +2412,32 @@ els.introForm.addEventListener("submit", (event) => {
 
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
-    document.querySelectorAll(".panel").forEach((item) => item.classList.remove("active"));
-    tab.classList.add("active");
-    document.querySelector(`#${tab.dataset.tab}Panel`).classList.add("active");
+    switchMainTab(tab.dataset.tab);
+  });
+});
+
+document.querySelector("#cropPanel").addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-open-crop-view]");
+  if (viewButton) {
+    setCropView(viewButton.dataset.openCropView, { resetScroll: true });
+    return;
+  }
+
+  const seedButton = event.target.closest("[data-manage-seed]");
+  if (seedButton) {
+    selectSeed(seedButton.dataset.manageSeed);
+  }
+});
+
+els.cropBackBtn.addEventListener("click", () => {
+  setCropView("home");
+});
+
+document.querySelectorAll("[data-dex-filter]").forEach((button) => {
+  button.addEventListener("click", () => {
+    activeDexFilter = button.dataset.dexFilter;
+    renderDex();
+    els.screenStack.scrollTop = 0;
   });
 });
 
@@ -2351,5 +2543,7 @@ els.resetCancelBtn.addEventListener("click", cancelReset);
 els.resetConfirmBtn.addEventListener("click", confirmReset);
 
 applyAudioSettings();
+els.app.dataset.activeTab = activeTab;
+setCropView("home", { preserveCurrent: false });
 render();
 setInterval(renderTick, 1000);
