@@ -27,3 +27,4 @@ Publish directory: outputs/TerraFarming
 
 - `outputs/TerraFarming/README.md`
 - `outputs/TerraFarming/SPEC.md`
+- `docs/UI_BACKLOG.md`
