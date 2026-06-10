@@ -793,7 +793,7 @@ body[data-stage="緑の星"] .planet-core {
 
 .screen-stack {
   min-height: 0;
-  padding: 0 14px 86px;
+  padding: 0 14px 98px;
   overflow-y: auto;
   scrollbar-width: thin;
 }
@@ -1930,36 +1930,53 @@ body[data-stage="緑の星"] .planet-core {
   z-index: 6;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
-  padding: 9px 10px 12px;
+  gap: 2px;
+  padding: 6px 7px calc(8px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(40, 103, 74, 0.14);
-  background: rgba(250, 253, 249, 0.94);
+  background: rgba(255, 252, 246, 0.96);
   box-shadow: 0 -10px 26px rgba(43, 62, 50, 0.1);
+  backdrop-filter: blur(12px);
 }
 
 .tab {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
-  min-height: 52px;
-  place-items: center;
-  padding: 5px 2px;
+  min-height: 76px;
+  padding: 4px 1px;
   border: 1px solid transparent;
-  border-radius: 15px;
+  border-radius: 18px;
   background: transparent;
-  color: var(--muted);
-  font-size: 0.66rem;
-  font-weight: 900;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
-.tab span {
-  font-size: 1rem;
-  line-height: 1;
+.tab-icon {
+  display: block;
+  width: min(100%, 72px);
+  height: 66px;
+  object-fit: contain;
+  filter: saturate(0.72) brightness(0.97);
+  opacity: 0.78;
+  transform: scale(0.9);
+  transition: filter 160ms ease, opacity 160ms ease, transform 160ms ease;
 }
 
 .tab.active {
   border-color: rgba(79, 157, 105, 0.28);
-  background: #eaf6e8;
-  color: var(--deep-green);
+  background: rgba(234, 246, 232, 0.82);
+  transform: translateY(-2px);
+}
+
+.tab.active .tab-icon {
+  filter: saturate(1) brightness(1.02);
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tab:focus-visible {
+  outline: 3px solid rgba(79, 157, 105, 0.34);
+  outline-offset: 1px;
 }
 
 @media (max-width: 480px) {
